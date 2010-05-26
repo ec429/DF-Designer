@@ -1,0 +1,67 @@
+diff -Nru dfdesigner_0.12/Makefile dfdesigner_0.12a/Makefile
+--- dfdesigner_0.12/Makefile	2010-02-07 16:29:03.000000000 +0000
++++ dfdesigner_0.12a/Makefile	2010-05-05 12:44:06.000000000 +0100
+@@ -1,6 +1,6 @@
+ CC ?= gcc
+-CFLAGS ?= -Wall
+-SDL = `sdl-config --cflags --libs` -lSDL_image -lSDL_ttf
++CFLAGS := -Wall `sdl-config --cflags`
++LIBS := `sdl-config --libs` -lSDL_image -lSDL_ttf
+ BINDIR = bin/
+ SRCDIR = src/
+ INCDIR = inc/
+@@ -45,3 +45,22 @@
+ 	tar -cvvf dfdesigner_$(VERSION).tar dfdesigner_$(VERSION)/
+ 	gzip -9 dfdesigner_$(VERSION).tar
+ 
++distw:
++	-mkdir dfdw_$(VERSION)
++	cp -r $(BINDIR) dfdw_$(VERSION)/$(BINDIR)
++	cp -r $(SRCDIR) dfdw_$(VERSION)/$(SRCDIR)
++	cp -r $(INCDIR) dfdw_$(VERSION)/$(INCDIR)
++	cp -r $(LIBDIR) dfdw_$(VERSION)/$(LIBDIR)
++	cp -r $(FNTDIR) dfdw_$(VERSION)/$(FNTDIR)
++	cp -r $(IMGDIR) dfdw_$(VERSION)/$(IMGDIR)
++	cp wbits/Makefile dfdw_$(VERSION)
++	for p in `ls wbits`; do cp wbits/$$p dfdw_$(VERSION); done;
++	cp readme dfdw_$(VERSION)
++	-rm dfdw_$(VERSION)/$(BINDIR)*~
++	-rm dfdw_$(VERSION)/$(SRCDIR)*~
++	-rm dfdw_$(VERSION)/$(INCDIR)*~
++	-rm dfdw_$(VERSION)/$(LIBDIR)*~
++	-rm dfdw_$(VERSION)/$(FNTDIR)*~
++	-rm dfdw_$(VERSION)/$(IMGDIR)*~
++	-rm dfdw_$(VERSION)/*~
++	make -C dfdw_$(VERSION) -fMakefile all
+diff -Nru dfdesigner_0.12/src/draw.c dfdesigner_0.12a/src/draw.c
+--- dfdesigner_0.12/src/draw.c	2010-02-07 16:29:03.000000000 +0000
++++ dfdesigner_0.12a/src/draw.c	2010-05-05 12:40:25.000000000 +0100
+@@ -1,25 +1,21 @@
+ #include "../inc/draw.h"
++#include <stdlib.h> /* atexit */
+ 
+ SDL_Surface * gf_init(int x, int y)
+ {
+ 	SDL_Surface * screen;
+-	if(SDL_Init(SDL_INIT_VIDEO)<0)
++	if(SDL_Init(SDL_INIT_VIDEO | SDL_DOUBLEBUF)<0)
+ 	{
+ 		perror("SDL_Init");
+ 		return(NULL);
+ 	}
+ 	atexit(SDL_Quit);
+-	if((screen = SDL_SetVideoMode(x, y, OBPP, SDL_HWSURFACE))==0)
++	if((screen = SDL_SetVideoMode(x, y, OBPP, SDL_HWSURFACE | SDL_ASYNCBLIT | SDL_HWACCEL))==0)
+ 	{
+ 		perror("SDL_SetVideoMode");
+ 		SDL_Quit();
+ 		return(NULL);
+ 	}
+-	if(SDL_MUSTLOCK(screen) && SDL_LockSurface(screen) < 0)
+-	{
+-		perror("SDL_LockSurface");
+-		return(NULL);
+-	}
+ 	return(screen);
+ }
+ 
