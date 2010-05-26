@@ -15,6 +15,7 @@ The Minimap will /really crawl/ on large maps.
 ==Compiling (Linux)==
 You will (probably) need libsdl1.2-dev, SDL_image, and SDL_ttf.  Working out precisely what is needed, and where to put it, is left as an exercise for the reader ;)
 Then, run make.  If there's an error about symbolic links, make should ignore that and so can you.
+If you're running a different architecture to i686, you may need to run 'make -B' to tell make to overwrite the provided i686 binaries.
 
 To start DF Designer, run './designer' or double-click on the executable (symlink).
 Command-line options:
