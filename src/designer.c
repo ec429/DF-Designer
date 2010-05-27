@@ -1,3 +1,10 @@
+/* Note on version numbering: whenever you commit a change to this file, you should first increment 'VERSION_REV' on line 35 (so we can match up version numbers to commits) */
+
+/*
+	designer: third party architectural design utility for 'Dwarf Fortress'
+	Licensed under the GPLv3+
+*/
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -30,11 +37,19 @@
 
 #define VERSION_MAJ	0
 #define VERSION_MIN	14
-#define VERSION_REV	1
+#define VERSION_REV	2
 
 #define MAX_WORLDX	2048
 #define MAX_WORLDY	2048
 #define MAX_WORLDZ	256
+
+typedef struct
+{
+	SDL_Surface * screen, * overlay;
+	TTF_Font * small_font, * big_font;
+	SDL_Surface * small_button_u, * small_button_p, * box_small;
+}
+gui;
 
 typedef struct
 {
@@ -58,6 +73,8 @@ bool showconsole=true;
 int console(SDL_Surface * screen, SDL_Surface * overlay, int delay, char * text, TTF_Font * font);
 int colconsole(SDL_Surface * screen, SDL_Surface * overlay, int delay, char * text, TTF_Font * font, char r, char g, char b);
 disp_tile tchar(tile ***map, int x, int y, int z, int worldx, int worldy, int groundlevel);
+int load_map(char *filename, tile ****map, gui guibits, int *worldx, int *worldy, int *levels, int *groundlevel, int *zslice, int *uslice, pos *view, pos *dview);
+int clear_map(tile ***map, bool alloc, int worldx, int worldy, int levels, int groundlevel);
 
 int main(int argc, char *argv[])
 {
@@ -67,6 +84,7 @@ int main(int argc, char *argv[])
 	int groundlevel=9;
 	int worldx=96;
 	int worldy=96;
+	char *lfn=NULL;
 	int arg;
 	for(arg=1; arg<argc; arg++)
 	{
@@ -74,32 +92,34 @@ int main(int argc, char *argv[])
 		{
 			confirms=false;
 		}
-		if((strcasecmp(argv[arg], "-i")==0) || (strcasecmp(argv[arg], "--no-full-3d")==0))
+		else if((strcasecmp(argv[arg], "-i")==0) || (strcasecmp(argv[arg], "--no-full-3d")==0))
 		{
 			isonly=true;
 		}
-		if((strcasecmp(argv[arg], "-h")==0) || (strcasecmp(argv[arg], "--no-help")==0))
+		else if((strcasecmp(argv[arg], "-h")==0) || (strcasecmp(argv[arg], "--no-help")==0))
 		{
 			shelp=false;
 		}
-		if(strncasecmp(argv[arg], "-z=", 3)==0)
+		else if(strncasecmp(argv[arg], "-z=", 3)==0)
 		{
 			sscanf(argv[arg]+3, "%d", &levels);
 		}
-		if(strncasecmp(argv[arg], "-x=", 3)==0)
+		else if(strncasecmp(argv[arg], "-x=", 3)==0)
 		{
 			sscanf(argv[arg]+3, "%d", &worldx);
 			worldx=min(worldx, MAX_WORLDX);
 		}
-		if(strncasecmp(argv[arg], "-y=", 3)==0)
+		else if(strncasecmp(argv[arg], "-y=", 3)==0)
 		{
 			sscanf(argv[arg]+3, "%d", &worldy);
 			worldy=min(worldy, MAX_WORLDY);
 		}
-		if(strncasecmp(argv[arg], "-z0=", 4)==0)
+		else if(strncasecmp(argv[arg], "-z0=", 4)==0)
 		{
 			sscanf(argv[arg]+4, "%d", &groundlevel);
 		}
+		else
+			lfn=argv[arg]; // Assume it's a file to open
 	}
 	
 	tile ***map = (tile ***)malloc(levels*sizeof(tile **));
@@ -110,30 +130,9 @@ int main(int argc, char *argv[])
 	}
 	else
 	{
-		int x,y,z;
-		for(z=0;z<levels;z++)
-		{
-			map[z] = (tile **)malloc(worldx*sizeof(tile *));
-			if(map[z]==NULL)
-			{
-				fprintf(stderr, "Not enough mem / couldn't alloc!\n");
-				return(2);
-			}
-			for(x=0;x<worldx;x++)
-			{
-				map[z][x] = (tile *)malloc(worldy*sizeof(tile));
-				if(map[z]==NULL)
-				{
-					fprintf(stderr, "Not enough mem / couldn't alloc!\n");
-					return(2);
-				}
-				for(y=0;y<worldy;y++)
-				{
-					map[z][x][y].data=(z<groundlevel)?TILE_ROCK:(z==groundlevel)?TILE_GRASS:0;
-					map[z][x][y].object=0;
-				}
-			}
-		}
+		int e=clear_map(map, true, worldx, worldy, levels, groundlevel);
+		if(e==2)
+			return(2);
 	}
 
 	TTF_Init();
@@ -276,6 +275,22 @@ int main(int argc, char *argv[])
 	cls.y=0;
 	cls.w=OSIZ_X;
 	cls.h=OSIZ_Y;
+	
+	gui guibits;
+	guibits.screen=screen;
+	guibits.overlay=overlay;
+	guibits.small_font=small_font;
+	guibits.big_font=big_font;
+	guibits.small_button_u=small_button_u;
+	guibits.small_button_p=small_button_p;
+	guibits.box_small=box_small;
+	
+	if(lfn!=NULL)
+	{
+		int e=load_map(lfn, &map, guibits, &worldx, &worldy, &levels, &groundlevel, &zslice, &uslice, &view, &dview);
+		if(e==2)
+			return(2);
+	}
 	
 	while(!errupt)
 	{
@@ -1214,6 +1229,21 @@ int main(int argc, char *argv[])
 								colconsole(screen, overlay, 20, "Z-level copy cancelled.", small_font, 128, 104, 32);
 							}
 						}
+						if((key.sym==SDLK_n) && (key.mod & KMOD_ALT))
+						{
+							bool clear=true;
+							if(confirms)
+							{
+								char * boxtextlines[] = {"Are you sure you want to clear the map?", "(This cannot be undone)"};
+								clear=ynbox(screen, box_small, boxtextlines, 2, small_button_u, small_button_p, small_font, small_font, "Yes, Go Ahead!", "No, Hold On!", 0, 24, 48, 96, 48, 96, 192);
+							}
+							if(clear)
+							{
+								int e=clear_map(map, false, worldx, worldy, levels, groundlevel);
+								if(e==2)
+									return(2);
+							}
+						}
 						if(key.sym==SDLK_l)
 						{
 							bool load=true;
@@ -1226,427 +1256,337 @@ int main(int argc, char *argv[])
 							{
 								char * boxtextlines[] = {"Load Map:", "Enter a filename (max 28 chars)"};
 								char * filename = textentry(screen, box_small, boxtextlines, 2, small_font, 192, 224, 255);
-								char string[100];
-								sprintf(string, "Loading from: %s...", filename);
-								fprintf(stderr, "%s\n", string);
-								console(screen, overlay, 20, string, small_font);
-								FILE * fp=fopen(filename, "r");
-								if(fp==NULL)
+								if(*filename==0)
 								{
-									fprintf(stderr, "Couldn't open file for reading!\n");
-									perror("fopen");
-									colconsole(screen, overlay, 20, "Couldn't open file for reading!", small_font, 224, 192, 96);
+									colconsole(screen, overlay, 20, "Load cancelled", small_font, 128, 104, 32);
 								}
 								else
 								{
-									bool ok=true;
-									char id[4];
-									fscanf(fp, "%4s", id);
-									if(strncmp(id, "DFDM", 4)!=0)
-									{
-										fprintf(stderr, "File corrupted, or not a DFD Map!\n");
-										colconsole(screen, overlay, 20, "File corrupted, or not a DFD Map!", small_font, 224, 192, 96);
-										ok=false;
-									}
-									else
-									{
-										unsigned char va,vb,vc,vn;
-										va=fgetc(fp);
-										vb=fgetc(fp);
-										vc=fgetc(fp);
-										vn=fgetc(fp);
-										if(vn!='\n')
-										{
-											fprintf(stderr, "File corrupted, or not a DFD Map!\n");
-											colconsole(screen, overlay, 20, "File corrupted, or not a DFD Map!", small_font, 224, 192, 96);
-											ok=false;
-										}
-										else
-										{
-											char vermsg[32];
-											sprintf(vermsg, "  File is version %hhu.%hhu.%hhu", va, vb, vc);
-											fprintf(stderr, "%s\n", vermsg);
-											colconsole(screen, overlay, 20, vermsg, small_font, 96, 96, 96);
-											int x,y,z;
-											for(z=0;z<levels;z++)
-											{
-												for(x=0;x<worldx;x++)
-												{
-													free(map[z][x]);
-												}
-												free(map[z]);
-											}
-											if((va>0) || (vb>=9))
-												fscanf(fp, "%u,%u,%u,%u\n", &levels, &worldx, &worldy, &groundlevel);
-											else
-												fscanf(fp, "%u,%u,%u\n", &levels, &worldx, &worldy);
-											uslice=groundlevel-1;
-											map = (tile ***)realloc(map, levels*sizeof(tile **));
-											if(map==NULL)
-											{
-												fprintf(stderr, "Memory exhausted.\n");
-												char * boxtext[] = {"Memory exhausted - ", "map load failed."};
-												okbox(screen, box_small, boxtext, 2, small_button_u, small_button_p, small_font, big_font, "Quit", 192, 224, 255, 0, 255, 0);
-												return(2);
-											}
-											else
-											{
-												for(z=0;z<levels;z++)
-												{
-													map[z] = (tile **)malloc(worldx*sizeof(tile *));
-													if(map[z]==NULL)
-													{
-														fprintf(stderr, "Not enough mem / couldn't alloc!\n");
-														return(2);
-													}
-													for(x=0;x<worldx;x++)
-													{
-														map[z][x] = (tile *)malloc(worldy*sizeof(tile));
-														if(map[z]==NULL)
-														{
-															fprintf(stderr, "Not enough mem / couldn't alloc!\n");
-															return(2);
-														}
-													}
-												}
-											}
-											for(z=0;z<levels;z++)
-											{
-												for(y=0;y<worldy;y++)
-												{
-													for(x=0;x<worldx;x++)
-													{
-														if(feof(fp))
-															ok=false;
-														map[z][x][y].data=ok?fgetc(fp):0;
-														if(feof(fp))
-															ok=false;
-														map[z][x][y].object=ok?fgetc(fp):0;
-													}
-												}
-												if(ok)
-												{
-													char nl=fgetc(fp);
-													if(nl!='\n')
-													{
-														fprintf(stderr, "File corrupted!  Map only partially loaded\n");
-														colconsole(screen, overlay, 20, "File corrupted!  Map only partially loaded", small_font, 224, 0, 0);
-														ok=false;
-													}
-												}
-											}
-										}
-									}
-									fclose(fp);
-									if(ok)
-									{
-										colconsole(screen, overlay, 20, "Loaded successfully!", small_font, 96, 224, 96);
-										zslice=groundlevel;
-										view.x=max(0, (worldx-64)/2);
-										view.y=max(0, (worldy-64)/2);
-										dview.x=dview.y=0;
-									}
+									int e=load_map(filename, &map, guibits, &worldx, &worldy, &levels, &groundlevel, &zslice, &uslice, &view, &dview);
+									if(e==2)
+										return(2);
 								}
 							}
 						}
 						if(key.sym==SDLK_s)
 						{
-							char * boxtextlines[] = {"Save Map:", "Enter a filename (max 28 chars)"};
-							char * filename = textentry(screen, box_small, boxtextlines, 2, small_font, 192, 224, 255);
-							char string[100];
-							sprintf(string, "Saving to: %s...", filename);
-							fprintf(stderr, "%s\n", string);
-							console(screen, overlay, 20, string, small_font);
-							FILE * fp=fopen(filename, "w");
-							free(filename);
-							if(fp==NULL)
+							char * boxtextlines[] = {"Save Map:", "Enter a filename (max 28 chars)", "Blank to cancel"};
+							char * filename = textentry(screen, box_small, boxtextlines, 3, small_font, 192, 224, 255);
+							if(*filename==0)
 							{
-								fprintf(stderr, "Couldn't open file for writing!\n");
-								perror("fopen");
-								colconsole(screen, overlay, 20, "Couldn't open file for writing!", small_font, 224, 192, 96);
+								colconsole(screen, overlay, 20, "Save cancelled", small_font, 128, 104, 32);
 							}
 							else
 							{
-								fprintf(fp, "DFDM%c%c%c\n", VERSION_MAJ, VERSION_MIN, VERSION_REV);
-								fprintf(fp, "%u,%u,%u,%u\n", levels, worldx, worldy, groundlevel);
-								int x,y,z;
-								for(z=0;z<levels;z++)
+								char string[100];
+								sprintf(string, "Saving to: %s...", filename);
+								fprintf(stderr, "%s\n", string);
+								console(screen, overlay, 20, string, small_font);
+								FILE * fp=fopen(filename, "w");
+								free(filename);
+								if(fp==NULL)
 								{
-									for(y=0;y<worldy;y++)
-									{
-										for(x=0;x<worldx;x++)
-										{
-											fputc(map[z][x][y].data, fp);
-											fputc(map[z][x][y].object, fp);
-										}
-									}
-									fputc('\n', fp);
+									fprintf(stderr, "Couldn't open file for writing!\n");
+									perror("fopen");
+									colconsole(screen, overlay, 20, "Couldn't open file for writing!", small_font, 224, 192, 96);
 								}
-								fclose(fp);
-								colconsole(screen, overlay, 20, "Saved successfully!", small_font, 96, 224, 96);
+								else
+								{
+									fprintf(fp, "DFDM%c%c%c\n", VERSION_MAJ, VERSION_MIN, VERSION_REV);
+									fprintf(fp, "%u,%u,%u,%u\n", levels, worldx, worldy, groundlevel);
+									int x,y,z;
+									for(z=0;z<levels;z++)
+									{
+										for(y=0;y<worldy;y++)
+										{
+											for(x=0;x<worldx;x++)
+											{
+												fputc(map[z][x][y].data, fp);
+												fputc(map[z][x][y].object, fp);
+											}
+										}
+										fputc('\n', fp);
+									}
+									fclose(fp);
+									colconsole(screen, overlay, 20, "Saved successfully!", small_font, 96, 224, 96);
+								}
 							}
 						}
 						if(key.sym==SDLK_x)
 						{
-							char * boxtextlines[] = {"Export Design:", "Enter a filename (max 28 chars)"};
-							char * filename = textentry(screen, box_small, boxtextlines, 2, small_font, 192, 224, 255);
-							char string[100];
-							sprintf(string, "Exporting to: %s...", filename);
-							fprintf(stderr, "%s\n", string);
-							console(screen, overlay, 20, string, small_font);
-							FILE * fp=fopen(filename, "w");
-							if(fp==NULL)
+							char * boxtextlines[] = {"Export Design:", "Enter a filename (max 28 chars)", "Blank to cancel"};
+							char * filename = textentry(screen, box_small, boxtextlines, 3, small_font, 192, 224, 255);
+							if(*filename==0)
 							{
-								fprintf(stderr, "Couldn't open file for writing!\n");
-								perror("fopen");
-								colconsole(screen, overlay, 20, "Couldn't open file for writing!", small_font, 224, 192, 96);
+								colconsole(screen, overlay, 20, "Export cancelled", small_font, 128, 104, 32);
 							}
 							else
 							{
-								fprintf(fp, "Generated by DF Designer %hhu.%hhu.%hhu\n", VERSION_MAJ, VERSION_MIN, VERSION_REV);
-								int x,y,z;
-								int nx=worldx,ny=worldy,nz=levels,mx=0,my=0,mz=0;
-								bool same[levels];
-								for(z=0;z<levels;z++)
+								char string[100];
+								sprintf(string, "Exporting to: %s...", filename);
+								fprintf(stderr, "%s\n", string);
+								console(screen, overlay, 20, string, small_font);
+								FILE * fp=fopen(filename, "w");
+								if(fp==NULL)
 								{
-									if(z>0)
+									fprintf(stderr, "Couldn't open file for writing!\n");
+									perror("fopen");
+									colconsole(screen, overlay, 20, "Couldn't open file for writing!", small_font, 224, 192, 96);
+								}
+								else
+								{
+									fprintf(fp, "Generated by DF Designer %hhu.%hhu.%hhu\n", VERSION_MAJ, VERSION_MIN, VERSION_REV);
+									int x,y,z;
+									int nx=worldx,ny=worldy,nz=levels,mx=0,my=0,mz=0;
+									bool same[levels];
+									for(z=0;z<levels;z++)
 									{
-										same[z]=true;
-										for(y=0;(y<worldy) && same[z];y++)
+										if(z>0)
 										{
-											for(x=0;(x<worldx) && same[z];x++)
+											same[z]=true;
+											for(y=0;(y<worldy) && same[z];y++)
 											{
-												if(map[z][x][y].data!=map[z-1][x][y].data)
-													same[z]=false;
-												else if((map[z][x][y].data & TILE_OBJECT) && (map[z][x][y].object!=map[z-1][x][y].object))
-													same[z]=false;
+												for(x=0;(x<worldx) && same[z];x++)
+												{
+													if(map[z][x][y].data!=map[z-1][x][y].data)
+														same[z]=false;
+													else if((map[z][x][y].data & TILE_OBJECT) && (map[z][x][y].object!=map[z-1][x][y].object))
+														same[z]=false;
+												}
+											}
+										}
+										else
+											same[z]=false;
+										for(y=0;y<worldy;y++)
+										{
+											for(x=0;x<worldx;x++)
+											{
+												int here=map[z][x][y].data;
+												if(z>groundlevel)
+												{
+													if(here!=0)
+													{
+														nx=min(nx, x);
+														ny=min(ny, y);
+														nz=min(nz, z);
+														mx=max(mx, x);
+														my=max(my, y);
+														mz=max(mz, z);
+													}
+												}
+												else if(z==groundlevel)
+												{
+													if(here&~TILE_GRASS)
+													{
+														nx=min(nx, x);
+														ny=min(ny, y);
+														nz=min(nz, z);
+														mx=max(mx, x);
+														my=max(my, y);
+														mz=max(mz, z);
+													}
+												}
+												else
+												{
+													if(here&~TILE_ROCK)
+													{
+														nx=min(nx, x);
+														ny=min(ny, y);
+														nz=min(nz, z);
+														mx=max(mx, x);
+														my=max(my, y);
+														mz=max(mz, z);
+													}
+												}
 											}
 										}
 									}
+									same[nz]=false; // we need to ensure that we at least get something
+									fputc('\n', fp);
+									for(z=mz;z>=nz;z--)
+									{
+										fprintf(fp, "Z-level %d\n", z-groundlevel);
+										if(!same[z])
+										{
+											for(y=ny;y<=my;y++)
+											{
+												fputc('\n', fp);
+												for(x=nx;x<=mx;x++)
+												{
+													disp_tile xtile = tchar(map, x, y, z, worldx, worldy, groundlevel);
+													if(xtile.v>127)
+														fprintf(fp, "%s", xatiles[xtile.v-128]);
+													else
+														fputc(xtile.v, fp);
+												}
+											}
+											fputc('\n', fp);
+											fputc('\n', fp);
+										}
+									}
+									fclose(fp);
+									colconsole(screen, overlay, 20, "Exported successfully!", small_font, 96, 32, 96);
+								}
+							}
+						}
+						if(key.sym==SDLK_y)
+						{
+							char * boxtextlines[] = {"Export Quickfort:", "Enter a filename (max 28 chars)", ".csv extension will be added", "automatically.  Blank to cancel"};
+							char * filename = textentry(screen, box_small, boxtextlines, 4, small_font, 192, 224, 255);
+							if(*filename==0)
+							{
+								colconsole(screen, overlay, 20, "Export cancelled", small_font, 128, 104, 32);
+							}
+							else
+							{
+								char csvfile[strlen(filename)+5];
+								sprintf(csvfile, "%s.csv", filename);
+								free(filename);
+								char string[100];
+								sprintf(string, "yxport: Exporting current zslice to: %s...", csvfile);
+								fprintf(stderr, "%s\n", string);
+								console(screen, overlay, 20, string, small_font);
+								FILE * fp=fopen(csvfile, "w");
+								if(fp==NULL)
+								{
+									fprintf(stderr, "yxport: Couldn't open file for writing!\n");
+									perror("fopen");
+									colconsole(screen, overlay, 20, "yxport: Couldn't open file for writing!", small_font, 224, 192, 96);
+								}
+								else
+								{
+									if(zslice>=groundlevel)
+										fprintf(fp, "#build Generated by DF Designer %hhu.%hhu.%hhu\n", VERSION_MAJ, VERSION_MIN, VERSION_REV);
 									else
-										same[z]=false;
+									{
+										colconsole(screen, overlay, 20, "yxport: Underground exports not done yet!  Sorry", small_font, 224, 160, 96);
+										fclose(fp);
+										goto qfstop;
+									}
+									int x,y;
+									int nx=worldx,ny=worldy,mx=0,my=0;
 									for(y=0;y<worldy;y++)
 									{
 										for(x=0;x<worldx;x++)
 										{
-											int here=map[z][x][y].data;
-											if(z>groundlevel)
+											int here=map[zslice][x][y].data;
+											if(zslice>groundlevel)
 											{
 												if(here!=0)
 												{
 													nx=min(nx, x);
 													ny=min(ny, y);
-													nz=min(nz, z);
 													mx=max(mx, x);
 													my=max(my, y);
-													mz=max(mz, z);
 												}
 											}
-											else if(z==groundlevel)
+											else if(zslice==groundlevel)
 											{
 												if(here&~TILE_GRASS)
 												{
 													nx=min(nx, x);
 													ny=min(ny, y);
-													nz=min(nz, z);
 													mx=max(mx, x);
 													my=max(my, y);
-													mz=max(mz, z);
 												}
 											}
-											else
+											else // shouldn't come here because we haven't done underground yxport yet
 											{
 												if(here&~TILE_ROCK)
 												{
 													nx=min(nx, x);
 													ny=min(ny, y);
-													nz=min(nz, z);
 													mx=max(mx, x);
 													my=max(my, y);
-													mz=max(mz, z);
 												}
 											}
 										}
 									}
-								}
-								same[nz]=false; // we need to ensure that we at least get something
-								fputc('\n', fp);
-								for(z=mz;z>=nz;z--)
-								{
-									fprintf(fp, "Z-level %d\n", z-groundlevel);
-									if(!same[z])
+									for(y=ny;y<=my;y++)
 									{
-										for(y=ny;y<=my;y++)
+										for(x=nx;x<=mx;x++)
 										{
-											fputc('\n', fp);
-											for(x=nx;x<=mx;x++)
+											int here=map[zslice][x][y].data;
+											char *qfbuild;
+											if(here&TILE_ROCK)
 											{
-												disp_tile xtile = tchar(map, x, y, z, worldx, worldy, groundlevel);
-												if(xtile.v>127)
-													fprintf(fp, "%s", xatiles[xtile.v-128]);
-												else
-													fputc(xtile.v, fp);
+												qfbuild="Cw";
 											}
+											else if(here&TILE_FLOOR)
+											{
+												qfbuild="Cf";
+											}
+											else if(here&TILE_DOOR)
+											{
+												qfbuild="d";
+											}
+											else if(here&TILE_STAIRS)
+											{
+												disp_tile xtile = tchar(map, x, y, zslice, worldx, worldy, groundlevel);
+												switch(xtile.v)
+												{
+													case '>':
+														qfbuild="Cd";
+													break;
+													case '<':
+														qfbuild="Cu";
+													break;
+													case 'X':
+														qfbuild="Cx";
+													break;
+													default:
+														fprintf(stderr, "yxport: A staircase could not be properly deduced\n");
+														colconsole(screen, overlay, 20, "yxport: A staircase could not be properly deduced", small_font, 160, 160, 128);
+														qfbuild="Cx";
+													break;
+												}
+											}
+											else if(here&TILE_FORTS)
+											{
+												qfbuild="CF";
+											}
+											else if(here&TILE_OBJECT)
+											{
+												switch(map[zslice][x][y].object)
+												{
+													case OBJECT_BED:
+														qfbuild="b";
+													break;
+													case OBJECT_CHAIR:
+														qfbuild="c";
+													break;
+													case OBJECT_TABLE:
+														qfbuild="t";
+													break;
+													case OBJECT_STATUE:
+														qfbuild="s";
+													break;
+													case OBJECT_STKPILE:
+														qfbuild="`";
+														fprintf(stderr, "yxport: stockpiles not yet supported (ignored)\n");
+														colconsole(screen, overlay, 20, "yxport: stockpiles not yet supported (ignored)", small_font, 160, 160, 128);
+													break;
+													default:
+														qfbuild="`";
+														fprintf(stderr, "yxport: unrecognised object %d (ignored)\n", map[zslice][x][y].object);
+														colconsole(screen, overlay, 20, "yxport: unrecognised object (ignored)", small_font, 160, 160, 128);
+													break;
+												}
+											}
+											else
+											{
+												qfbuild="`";
+											}
+											fprintf(fp, "%s,", qfbuild);
 										}
-										fputc('\n', fp);
-										fputc('\n', fp);
+										fprintf(fp, "#\n");
 									}
-								}
-								fclose(fp);
-								colconsole(screen, overlay, 20, "Exported successfully!", small_font, 96, 32, 96);
-							}
-						}
-						if(key.sym==SDLK_y)
-						{
-							char * boxtextlines[] = {"Export Quickfort:", "Enter a filename (max 28 chars)", ".csv extension will be added", "automatically."};
-							char * filename = textentry(screen, box_small, boxtextlines, 4, small_font, 192, 224, 255);
-							char csvfile[strlen(filename)+5];
-							sprintf(csvfile, "%s.csv", filename);
-							free(filename);
-							char string[100];
-							sprintf(string, "yxport: Exporting current zslice to: %s...", csvfile);
-							fprintf(stderr, "%s\n", string);
-							console(screen, overlay, 20, string, small_font);
-							FILE * fp=fopen(csvfile, "w");
-							if(fp==NULL)
-							{
-								fprintf(stderr, "yxport: Couldn't open file for writing!\n");
-								perror("fopen");
-								colconsole(screen, overlay, 20, "yxport: Couldn't open file for writing!", small_font, 224, 192, 96);
-							}
-							else
-							{
-								if(zslice>=groundlevel)
-									fprintf(fp, "#build Generated by DF Designer %hhu.%hhu.%hhu\n", VERSION_MAJ, VERSION_MIN, VERSION_REV);
-								else
-								{
-									colconsole(screen, overlay, 20, "yxport: Underground exports not done yet!  Sorry", small_font, 224, 160, 96);
 									fclose(fp);
-									goto qfstop;
+									colconsole(screen, overlay, 20, "yxport: Exported successfully!", small_font, 96, 32, 96);
 								}
-								int x,y;
-								int nx=worldx,ny=worldy,mx=0,my=0;
-								for(y=0;y<worldy;y++)
-								{
-									for(x=0;x<worldx;x++)
-									{
-										int here=map[zslice][x][y].data;
-										if(zslice>groundlevel)
-										{
-											if(here!=0)
-											{
-												nx=min(nx, x);
-												ny=min(ny, y);
-												mx=max(mx, x);
-												my=max(my, y);
-											}
-										}
-										else if(zslice==groundlevel)
-										{
-											if(here&~TILE_GRASS)
-											{
-												nx=min(nx, x);
-												ny=min(ny, y);
-												mx=max(mx, x);
-												my=max(my, y);
-											}
-										}
-										else // shouldn't come here because we haven't done underground yxport yet
-										{
-											if(here&~TILE_ROCK)
-											{
-												nx=min(nx, x);
-												ny=min(ny, y);
-												mx=max(mx, x);
-												my=max(my, y);
-											}
-										}
-									}
-								}
-								for(y=ny;y<=my;y++)
-								{
-									for(x=nx;x<=mx;x++)
-									{
-										int here=map[zslice][x][y].data;
-										char *qfbuild;
-										if(here&TILE_ROCK)
-										{
-											qfbuild="Cw";
-										}
-										else if(here&TILE_FLOOR)
-										{
-											qfbuild="Cf";
-										}
-										else if(here&TILE_DOOR)
-										{
-											qfbuild="d";
-										}
-										else if(here&TILE_STAIRS)
-										{
-											disp_tile xtile = tchar(map, x, y, zslice, worldx, worldy, groundlevel);
-											switch(xtile.v)
-											{
-												case '>':
-													qfbuild="Cd";
-												break;
-												case '<':
-													qfbuild="Cu";
-												break;
-												case 'X':
-													qfbuild="Cx";
-												break;
-												default:
-													fprintf(stderr, "yxport: A staircase could not be properly deduced\n");
-													colconsole(screen, overlay, 20, "yxport: A staircase could not be properly deduced", small_font, 160, 160, 128);
-													qfbuild="Cx";
-												break;
-											}
-										}
-										else if(here&TILE_FORTS)
-										{
-											qfbuild="CF";
-										}
-										else if(here&TILE_OBJECT)
-										{
-											switch(map[zslice][x][y].object)
-											{
-												case OBJECT_BED:
-													qfbuild="b";
-												break;
-												case OBJECT_CHAIR:
-													qfbuild="c";
-												break;
-												case OBJECT_TABLE:
-													qfbuild="t";
-												break;
-												case OBJECT_STATUE:
-													qfbuild="s";
-												break;
-												case OBJECT_STKPILE:
-													qfbuild="`";
-													fprintf(stderr, "yxport: stockpiles not yet supported (ignored)\n");
-													colconsole(screen, overlay, 20, "yxport: stockpiles not yet supported (ignored)", small_font, 160, 160, 128);
-												break;
-												default:
-													qfbuild="`";
-													fprintf(stderr, "yxport: unrecognised object %d (ignored)\n", map[zslice][x][y].object);
-													colconsole(screen, overlay, 20, "yxport: unrecognised object (ignored)", small_font, 160, 160, 128);
-												break;
-											}
-										}
-										else
-										{
-											qfbuild="`";
-										}
-										fprintf(fp, "%s,", qfbuild);
-									}
-									fprintf(fp, "#\n");
-								}
-								fclose(fp);
-								colconsole(screen, overlay, 20, "yxport: Exported successfully!", small_font, 96, 32, 96);
+								qfstop:
+								;
 							}
-							qfstop:
-							;
 						}
 						int x=view.x+(mouse.x-280)/8,
 							y=view.y+(mouse.y-8)/8;
@@ -2381,4 +2321,162 @@ disp_tile tchar(tile ***map, int x, int y, int z, int worldx, int worldy, int gr
 		ret=err;
 	}
 	return(ret);
+}
+
+int load_map(char *filename, tile ****map, gui guibits, int *worldx, int *worldy, int *levels, int *groundlevel, int *zslice, int *uslice, pos *view, pos *dview)
+{
+	char string[100];
+	sprintf(string, "Loading from: %s...", filename);
+	fprintf(stderr, "%s\n", string);
+	console(guibits.screen, guibits.overlay, 20, string, guibits.small_font);
+	FILE * fp=fopen(filename, "r");
+	if(fp==NULL)
+	{
+		fprintf(stderr, "Couldn't open file for reading!\n");
+		perror("fopen");
+		colconsole(guibits.screen, guibits.overlay, 20, "Couldn't open file for reading!", guibits.small_font, 224, 192, 96);
+	}
+	else
+	{
+		bool ok=true;
+		char id[4];
+		fread(id, 1, 4, fp);
+		if(strncmp(id, "DFDM", 4)!=0)
+		{
+			fprintf(stderr, "File corrupted, or not a DFD Map!\n");
+			colconsole(guibits.screen, guibits.overlay, 20, "File corrupted, or not a DFD Map!", guibits.small_font, 224, 192, 96);
+			ok=false;
+		}
+		else
+		{
+			unsigned char va,vb,vc,vn;
+			va=fgetc(fp);
+			vb=fgetc(fp);
+			vc=fgetc(fp);
+			vn=fgetc(fp);
+			if(vn!='\n')
+			{
+				fprintf(stderr, "File corrupted, or not a DFD Map!\n");
+				colconsole(guibits.screen, guibits.overlay, 20, "File corrupted, or not a DFD Map!", guibits.small_font, 224, 192, 96);
+				ok=false;
+			}
+			else
+			{
+				char vermsg[32];
+				sprintf(vermsg, "  File is version %hhu.%hhu.%hhu", va, vb, vc);
+				fprintf(stderr, "%s\n", vermsg);
+				colconsole(guibits.screen, guibits.overlay, 20, vermsg, guibits.small_font, 96, 96, 96);
+				int x,y,z;
+				for(z=0;z<*levels;z++)
+				{
+					for(x=0;x<*worldx;x++)
+					{
+						free((*map)[z][x]);
+					}
+					free((*map)[z]);
+				}
+				if((va>0) || (vb>=9))
+					fscanf(fp, "%u,%u,%u,%u\n", levels, worldx, worldy, groundlevel);
+				else
+					fscanf(fp, "%u,%u,%u\n", levels, worldx, worldy);
+				*uslice=*groundlevel-1;
+				(*map) = (tile ***)realloc((*map), *levels*sizeof(tile **));
+				if((*map)==NULL)
+				{
+					fprintf(stderr, "Memory exhausted.\n");
+					char * boxtext[] = {"Memory exhausted - ", "map load failed."};
+					okbox(guibits.screen, guibits.box_small, boxtext, 2, guibits.small_button_u, guibits.small_button_p, guibits.small_font, guibits.big_font, "Quit", 192, 224, 255, 0, 255, 0);
+					return(2);
+				}
+				else
+				{
+					for(z=0;z<*levels;z++)
+					{
+						(*map)[z] = (tile **)malloc(*worldx*sizeof(tile *));
+						if((*map)[z]==NULL)
+						{
+							fprintf(stderr, "Not enough mem / couldn't alloc!\n");
+							return(2);
+						}
+						for(x=0;x<*worldx;x++)
+						{
+							(*map)[z][x] = (tile *)malloc(*worldy*sizeof(tile));
+							if((*map)[z][x]==NULL)
+							{
+								fprintf(stderr, "Not enough mem / couldn't alloc!\n");
+								return(2);
+							}
+						}
+					}
+				}
+				for(z=0;z<*levels;z++)
+				{
+					for(y=0;y<*worldy;y++)
+					{
+						for(x=0;x<*worldx;x++)
+						{
+							if(feof(fp))
+								ok=false;
+							(*map)[z][x][y].data=ok?fgetc(fp):0;
+							if(feof(fp))
+								ok=false;
+							(*map)[z][x][y].object=ok?fgetc(fp):0;
+						}
+					}
+					if(ok)
+					{
+						char nl=fgetc(fp);
+						if(nl!='\n')
+						{
+							fprintf(stderr, "File corrupted!  Map only partially loaded\n");
+							colconsole(guibits.screen, guibits.overlay, 20, "File corrupted!  Map only partially loaded", guibits.small_font, 224, 0, 0);
+							ok=false;
+						}
+					}
+				}
+			}
+		}
+		fclose(fp);
+		if(ok)
+		{
+			colconsole(guibits.screen, guibits.overlay, 20, "Loaded successfully!", guibits.small_font, 96, 224, 96);
+			*zslice=*groundlevel;
+			view->x=max(0, (*worldx-64)/2);
+			view->y=max(0, (*worldy-64)/2);
+			dview->x=dview->y=0;
+			return(0);
+		}
+	}
+	return(1);
+}
+
+int clear_map(tile ***map, bool alloc, int worldx, int worldy, int levels, int groundlevel)
+{
+	int x,y,z;
+	for(z=0;z<levels;z++)
+	{
+		if(alloc)
+			map[z] = (tile **)malloc(worldx*sizeof(tile *));
+		if(map[z]==NULL)
+		{
+			fprintf(stderr, "Not enough mem / couldn't alloc!\n");
+			return(2);
+		}
+		for(x=0;x<worldx;x++)
+		{
+			if(alloc)
+				map[z][x] = (tile *)malloc(worldy*sizeof(tile));
+			if(map[z]==NULL)
+			{
+				fprintf(stderr, "Not enough mem / couldn't alloc!\n");
+				return(2);
+			}
+			for(y=0;y<worldy;y++)
+			{
+				map[z][x][y].data=(z<groundlevel)?TILE_ROCK:(z==groundlevel)?TILE_GRASS:0;
+				map[z][x][y].object=0;
+			}
+		}
+	}
+	return(0);
 }

@@ -1,3 +1,5 @@
+/* Note on version numbering: whenever you commit a change to this file, you should first increment 'VERSION_REV' on line 35 of src/designer.c (so we can match up version numbers to commits) */
+
 #include "../inc/draw.h"
 
 #define max(a,b)	((a)>(b)?(a):(b))

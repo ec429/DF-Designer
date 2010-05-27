@@ -1,3 +1,5 @@
+/* Note on version numbering: whenever you commit a change to this file, you should first increment 'VERSION_REV' on line 35 of src/designer.c (so we can match up version numbers to commits) */
+
 #include "../inc/dialogs.h"
 
 int okbox(SDL_Surface * screen, SDL_Surface * boximage, char ** boxtext, int boxtextlines, SDL_Surface * button_u, SDL_Surface * button_p, TTF_Font * font, TTF_Font * buttonfont, char * buttontext, char r, char g, char b, char br, char bg, char bb)

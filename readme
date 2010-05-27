@@ -26,6 +26,7 @@ Command-line options:
 -y=<number>			Y-Size of world (default=96; max=2048)
 -z=<number>			Z-Size of world (default=24; max=256)
 -z0=<number>		Ground Z-level (default=9)
+<filename>			Loads the dfdmap <filename>
 
 ==The Basics==
 DF Designer has two modes, Edit (top-down slice) and Isometric (view only).  You can switch between these modes with the keys 'e' and 'i' respectively, or toggle with spacebar.
@@ -36,7 +37,7 @@ Isometric mode is actually a misnomer; it renders in 3D and you can rotate the v
 To find out which key does what, press 'h', and some help will scroll up that fancy console on the left.
 You can designate rectangular areas by right-clicking twice.  Beware, though, because you can't undo (yet).
 You can also do designations by pressing Ctrl-* where * is a designation key.  So, for example, Ctrl-b places a bed, as well as selecting 'bed' as the current tool; 'b' on its own would just select 'bed', and not actually place one until you left-clicked.
-Load and Save with [l] and [s].  Suggested extension, ".dfd", though it's up to you.
+Load and Save with 'l' and 's'.  Suggested extension, ".dfd", though it's up to you.  You can wipe the map clean with Alt-N.
 Edit has two submodes, COLOURS and DF-TILES, two methods of displaying what's in each tile.  Select them with colon ':' and at '@' respectively.
 DF Designer doesn't implement anything near the full ontology of buildings and constructions in DF; however, as the versions go by, it should increase.
 'Objects' - beds, chairs, tables, and other stuff - don't appear in Isometric mode right now, because I haven't done any models or anything like that for them yet.
