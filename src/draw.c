@@ -1,4 +1,7 @@
-/* Note on version numbering: whenever you commit a change to this file, you should first increment 'VERSION_REV' on line 35 of src/designer.c (so we can match up version numbers to commits) */
+/* Note on version numbering: whenever you commit a change to this file, you should first increment the definition of 'VERSION_REV' in src/designer.c (so we can match up version numbers to commits) */
+//	designer - third party architectural design utility for 'Dwarf Fortress'
+//	Copyright (C) 2010 Edward Cree (see top of src/designer.c for license details)
+//   src/draw.c - provides drawing-functions
 
 #include "../inc/draw.h"
 
