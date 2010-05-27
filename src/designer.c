@@ -1,4 +1,4 @@
-/* Note on version numbering: whenever you commit a change to this file, you should first increment the definition of 'VERSION_REV' (so we can match up version numbers to commits) */
+/* Note on version numbering: whenever you commit a change to a source file, you should first increment 'VERSION_REV' on line 7 of version.h (so we can match up version numbers to commits) */
 
 /*
 	designer - third party architectural design utility for 'Dwarf Fortress'
@@ -28,6 +28,7 @@
 #include "../inc/draw.h"
 #include "../inc/dialogs.h"
 #include "../inc/437.h"
+#include "../inc/version.h"
 
 #define TILE_ROCK	1
 #define TILE_DOOR	2
@@ -48,10 +49,6 @@
 
 #define CONSOLE_WIDTH 280
 #define CONSOLE_HEIGHT OSIZ_Y
-
-#define VERSION_MAJ	0
-#define VERSION_MIN	14
-#define VERSION_REV	2
 
 #define MAX_WORLDX	2048
 #define MAX_WORLDY	2048
