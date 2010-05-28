@@ -878,8 +878,8 @@ int main(int argc, char *argv[])
 								}
 								else
 								{
-									sx=540-c_rock.vertex[2].x*(x+dsx-32)*.8-c_rock.vertex[1].x*(y+dsy-32)*.8;
-									sy=120-c_rock.vertex[2].y*(x+dsx-32)-c_rock.vertex[1].y*(y+dsy-32)-(c_rock.vertex[3].y+1)*(uslice+20-z);
+									sx=540-c_rock.vertex[2].x*(x+dsx-31)*.8-c_rock.vertex[1].x*(y+dsy-31)*.8;
+									sy=120-c_rock.vertex[2].y*(x+dsx-31)-c_rock.vertex[1].y*(y+dsy-31)-(c_rock.vertex[3].y+1)*(uslice+20-z);
 								}
 								if(sy>8)
 								{
@@ -1048,8 +1048,8 @@ int main(int argc, char *argv[])
 										}
 										else
 										{
-											sx=540-c_rock.vertex[2].x*(x+dsx-32)*.8-c_rock.vertex[1].x*(y+dsy-32)*.8;
-											sy=120-c_rock.vertex[2].y*(x+dsx-32)-c_rock.vertex[1].y*(y+dsy-32)-(c_rock.vertex[3].y+1)*(uslice+19-z);
+											sx=540-c_rock.vertex[2].x*(x+dsx-31)*.8-c_rock.vertex[1].x*(y+dsy-31)*.8;
+											sy=120-c_rock.vertex[2].y*(x+dsx-31)-c_rock.vertex[1].y*(y+dsy-31)-(c_rock.vertex[3].y+1)*(uslice+19-z);
 										}
 										if(sy>8)
 										{

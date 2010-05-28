@@ -144,18 +144,15 @@ int dmenu(SDL_Surface * screen, int x, int y, int items, int pressed, int hover,
 cparms cuboid(int dx, int dy, int dz, double theta, double phi)
 {
 	cparms rv;
-	//fprintf(stderr, "1\n");
 	double vertex[3][3]; // vertices joined to the base point
 	vertex[0][0]=dy*sin(theta);vertex[0][1]=dy*cos(theta)*cos(phi);vertex[0][2]=-dy*cos(theta)*sin(phi);
 	vertex[1][0]=dx*cos(theta);vertex[1][1]=-dx*sin(theta)*cos(phi);vertex[1][2]=dx*sin(theta)*sin(phi);
 	vertex[2][0]=0;vertex[2][1]=dz*sin(phi);vertex[2][2]=dz*cos(phi);
-	//fprintf(stderr, "2\n");
 	
 	rv.vertex[0].x=0;rv.vertex[0].y=0;
 	int i;
 	for(i=1;i<7;i++)
 	{
-		//fprintf(stderr, "3.%d\n", i);
 		double x=0,y=0,z=0;
 		if((i==1)||(i==4)||(i==6))
 		{
@@ -175,16 +172,12 @@ cparms cuboid(int dx, int dy, int dz, double theta, double phi)
 			y+=vertex[2][1];
 			z+=vertex[2][2];
 		}
-		//fprintf(stderr, "%d:%g,%g,%g\n", i, x, y, z);
-		rv.vertex[i].x=(x);//floor((x/2.0)-(y/2.0));
-		rv.vertex[i].y=(-z);//-y/2);//floor(-(x*c3)-(y*c3)-z);
+		rv.vertex[i].x=x;
+		rv.vertex[i].y=-z;
 	}
-	//fprintf(stderr, "4\n");
-	rv.face[0]=floor(-wedge(vertex[0], vertex[2])*96.0)+159;
-	rv.face[1]=floor(-wedge(vertex[1], vertex[2])*96.0)+159;
-	rv.face[2]=floor(-wedge(vertex[0], vertex[1])*96.0)+159;
-	//fprintf(stderr, "%d,%d,%d\n", rv.face[0], rv.face[1], rv.face[2]);
-	//fprintf(stderr, "5\n");
+	rv.face[0]=192;//floor(-wedge(vertex[0], vertex[2])*96.0)+159; /* With the randomisation, we don't really need this kind of accuracy, */
+	rv.face[1]=192;//floor(-wedge(vertex[1], vertex[2])*96.0)+159; /* which is never visible anyway.  Also the quarter-rotation stuff     */
+	rv.face[2]=168;//floor(-wedge(vertex[0], vertex[1])*96.0)+159; /* breaks it, so we may as well simplify (and get more speed).         */
 	return(rv);
 }
 

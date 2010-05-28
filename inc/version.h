@@ -4,4 +4,4 @@
 #pragma once
 #define VERSION_MAJ	0	// Major version
 #define VERSION_MIN	14	// Minor version
-#define VERSION_REV	2	// Revision number; should be incremented before committing any source change which will affect binary behaviour
+#define VERSION_REV	3	// Revision number; should be incremented before committing any source change which will affect binary behaviour
