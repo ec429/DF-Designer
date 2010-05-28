@@ -230,6 +230,7 @@ int main(int argc, char *argv[])
 		}
 	}
 	free(fn);
+	/* read in the newgui images - first the 'base' ones, then try to open the art ones and if not, procedurally generate from the base ones & text */
 	
 	SDL_Surface * dftiles=IMG_Load("img/df_tiles.png");
 	if(!dftiles)
