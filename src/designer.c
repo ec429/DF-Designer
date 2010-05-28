@@ -180,57 +180,35 @@ int main(int argc, char *argv[])
 		fprintf(stderr, "%s\n", vermsg);
 	}
 	console(screen, overlay, 20, "Loading gui images...", small_font);
-	console(screen, overlay, 20, "Warning!  DF Designer is still beta!", small_font);
 	
 	SDL_Surface * small_button_u = IMG_Load("img/small_button_u.png");
 	SDL_Surface * small_button_p = IMG_Load("img/small_button_p.png");
 	SDL_Surface * box_small = IMG_Load("img/box.png");
 	if(!small_button_u || !small_button_p || !box_small)
 	{
+		imgfail:
 		fprintf(stderr, "Failed to read images!\n");
 		fprintf(stderr, "IMG_Load: %s\n", IMG_GetError());
 		return(1);
 	}
-	SDL_Surface * tool[128];
-	SDL_Surface * missing=IMG_Load("img/missing.png");
-	{
-		int c;
-		for(c=0;c<128;c++)
-		{
-			tool[c]=NULL;
-		}
-	}
-	tool['r'] = IMG_Load("img/rock.png");
-	tool['f'] = IMG_Load("img/floor.png");
-	tool['d'] = IMG_Load("img/door.png");
-	tool['g'] = IMG_Load("img/grass.png");
-	tool['t'] = IMG_Load("img/stairs.png");
-	tool['w'] = IMG_Load("img/water.png");
-	tool['b'] = IMG_Load("img/bed.png");
-	char *fn=strdup("img/ .png"), tx[2];
-	tx[1]=0;
-	{
-		int c;
-		for(c=0;c<128;c++)
-		{
-			fn[4]=c;
-			if(!tool[c])
-				tool[c]=IMG_Load(fn);
-			if(!tool[c])
-			{
-				tool[c]=SDL_CreateRGBSurface(SDL_SWSURFACE, missing->w, missing->h, OBPP, 0, 0, 0, 0);
-				SDL_BlitSurface(missing, NULL, tool[c], &cls);
-				SDL_Rect letter = {68, 19, 6, 12};
-				tx[0]=c;
-				SDL_Color clrFg = {224, 96, 96, 0};
-				SDL_Surface *sText = TTF_RenderText_Solid(small_font, tx, clrFg);
-				SDL_BlitSurface(sText, NULL, tool[c], &letter);
-				SDL_FreeSurface(sText);
-			}
-		}
-	}
-	free(fn);
 	/* read in the newgui images - first the 'base' ones, then try to open the art ones and if not, procedurally generate from the base ones & text */
+	SDL_Surface * menubase[6];
+	menubase[0]=IMG_Load("img/menu/0");
+	if(!menubase[0])
+		goto imgfail; // there's nothing wrong with gotos.  Please don't get stroppy about them.
+	else
+	{
+		char * basename=strdup("img/menu/ /0");
+		int i;
+		for(i=1;i<6;i++)
+		{
+			basename[9]=i+'0';
+			menubase[i]=IMG_Load(basename);
+			if(!menubase[i])
+				goto imgfail;
+		}
+		free(basename);
+	}
 	
 	SDL_Surface * dftiles=IMG_Load("img/df_tiles.png");
 	if(!dftiles)
@@ -239,6 +217,7 @@ int main(int argc, char *argv[])
 		fprintf(stderr, "IMG_Load: %s\n", IMG_GetError());
 	}
 	
+	console(screen, overlay, 20, "Warning!  DF Designer is still beta!", small_font);
 	if(confirms)
 	{
 		char * boxtextlines[] = {"Warning!  DF Designer is still beta!", "Use at your own risk.  For support:", "ask soundnfury on #bay12games or", "post in the forum thread"};
@@ -1107,20 +1086,7 @@ int main(int argc, char *argv[])
 		if(lastr>1)
 			lastr=0;
 		
-		// in edit mode, show current tool
-		if(viewmode==0)
-		{
-			SDL_Rect curtool={420, 524, 0, 0};
-			if(((lastkey&~0x7F)==0) && (tool[(int)lastkey]!=NULL))
-			{
-				SDL_BlitSurface(tool[(int)lastkey], NULL, screen, &curtool);
-			}
-		}
-		else
-		{
-			SDL_Rect curtool={420, 524, 96, 96};
-			SDL_FillRect(screen, &curtool, SDL_MapRGB(screen->format, 0, 0, 0));
-		}
+		// TODO: MENU!
 		
 		// apply console overlay
 		if(showconsole)
