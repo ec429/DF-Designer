@@ -10,7 +10,7 @@ IMGDIR = img/
 DGFX = -DOSIZ_X=800 -DOSIZ_Y=640 -DOBPP=32
 DFONT = -DFONT_FILE=\"$(FNTDIR)Vera.ttf\"
 
-all: $(BINDIR)designer
+all: designer $(BINDIR)designer
 
 designer: $(BINDIR)designer
 	-ln $(BINDIR)designer designer --symbolic
