@@ -30,6 +30,7 @@
 #include "../inc/437.h"
 #include "../inc/version.h"
 
+// Map data definitions
 #define TILE_ROCK	1
 #define TILE_DOOR	2
 #define TILE_FLOOR	4
@@ -50,10 +51,12 @@
 #define CONSOLE_WIDTH 280
 #define CONSOLE_HEIGHT OSIZ_Y
 
+// Maximum map sizes
 #define MAX_WORLDX	2048
 #define MAX_WORLDY	2048
 #define MAX_WORLDZ	256
 
+// Holds enough info for functions needing to write console or dialogues to do so
 typedef struct
 {
 	SDL_Surface * screen, * overlay;
@@ -62,6 +65,7 @@ typedef struct
 }
 gui;
 
+// Basic map tile unit
 typedef struct
 {
 	char data;
@@ -69,6 +73,7 @@ typedef struct
 }
 tile;
 
+// Preprocessed tile data in ASCII+colour form, for eg. DF-Tiles and Export
 typedef struct
 {
 	unsigned char v;
@@ -77,6 +82,7 @@ typedef struct
 }
 disp_tile;
 
+// Useful tile definitions (blank and error)
 disp_tile wb={' ', 255, 255, 255, 0, 0, 0}, err={'!', 255, 0, 0, 0, 0, 192};
 
 bool showconsole=true;
@@ -89,13 +95,14 @@ int clear_map(tile ***map, bool alloc, int worldx, int worldy, int levels, int g
 
 int main(int argc, char *argv[])
 {
-	// Set up DF vars
-	bool confirms=true, shelp=true,isonly=false;
+	// Set up DF & setting vars
+	bool confirms=true, shelp=true, isonly=false;
 	int levels=24;
 	int groundlevel=9;
 	int worldx=96;
 	int worldy=96;
 	char *lfn=NULL;
+	// parse arguments
 	int arg;
 	for(arg=1; arg<argc; arg++)
 	{
@@ -133,6 +140,7 @@ int main(int argc, char *argv[])
 			lfn=argv[arg]; // Assume it's a file to open
 	}
 	
+	// Allocate RAM for the map, and set it to a flat grass surface
 	tile ***map = (tile ***)malloc(levels*sizeof(tile **));
 	if(map==NULL)
 	{
@@ -145,16 +153,22 @@ int main(int argc, char *argv[])
 		if(e==2)
 			return(2);
 	}
-
+	
+	// Set up the fonts
 	TTF_Init();
 	atexit(TTF_Quit);
 	TTF_Font *small_font=TTF_OpenFont(FONT_FILE, 11);
 	TTF_Font *big_font=TTF_OpenFont(FONT_FILE, 24);
+	if((!small_font) || (!big_font))
+	{
+		fprintf(stderr, "Failed to load fonts!\n");
+		fprintf(stderr, "TTF_OpenFont: %s\n", TTF_GetError());
+		return(1);
+	}
 
 	// SDL stuff
 	SDL_Surface * screen = gf_init(OSIZ_X, OSIZ_Y);
-	SDL_WM_SetCaption("DF Designer", "DF Designer");
-	//SDL_EnableKeyRepeat(1, 1);
+	SDL_WM_SetCaption("DF Designer by soundandfury", "DF Designer");
 	SDL_EnableUNICODE(1);
 	SDL_Event event;
 	SDL_Rect cls;
@@ -169,9 +183,11 @@ int main(int argc, char *argv[])
 	over.h=CONSOLE_HEIGHT+20;
 	int errupt = 0;
 	
+	// Set up the overlay screen for the scrolly console
 	SDL_Surface * overlay = SDL_CreateRGBSurface(SDL_SWSURFACE, CONSOLE_WIDTH, CONSOLE_HEIGHT+20, OBPP, 0, 0, 0, 0);
 	SDL_FillRect(overlay, &cls, SDL_MapRGB(overlay->format, 0, 0, 0));
 	
+	// Version & startup messages
 	cls.h-=20;
 	{
 		char vermsg[32];
@@ -182,6 +198,7 @@ int main(int argc, char *argv[])
 	console(screen, overlay, 20, "Loading gui images...", small_font);
 	console(screen, overlay, 20, "Warning!  DF Designer is still beta!", small_font);
 	
+	// Load in GUI images
 	SDL_Surface * small_button_u = IMG_Load("img/small_button_u.png");
 	SDL_Surface * small_button_p = IMG_Load("img/small_button_p.png");
 	SDL_Surface * box_small = IMG_Load("img/box.png");
@@ -231,6 +248,7 @@ int main(int argc, char *argv[])
 	}
 	free(fn);
 	
+	// Load in the tilemap for DF-TILES editview
 	SDL_Surface * dftiles=IMG_Load("img/df_tiles.png");
 	if(!dftiles)
 	{
@@ -238,12 +256,14 @@ int main(int argc, char *argv[])
 		fprintf(stderr, "IMG_Load: %s\n", IMG_GetError());
 	}
 	
+	// Warning about how beta we are
 	if(confirms)
 	{
 		char * boxtextlines[] = {"Warning!  DF Designer is still beta!", "Use at your own risk.  For support:", "ask soundnfury on #bay12games or", "post in the forum thread"};
 		okbox(screen, box_small, boxtextlines, 4, small_button_u, small_button_p, small_font, big_font, "OK", 24, 48, 96, 48, 96, 192);
 	}
 	
+	// Send the key-help through the console, unless -h was given
 	if(shelp)
 	{
 		SDL_Event makekey;
@@ -262,6 +282,7 @@ int main(int argc, char *argv[])
 	console(screen, overlay, 8, "In Editing mode, using COLOUR tiles.", small_font);
 	console(screen, overlay, 8, "Shadowing is ON - [m] to toggle.", small_font);
 	
+	// Set up control vars
 	char button;
 	pos mouse;
 	char drag=0, dold=drag;
@@ -287,6 +308,7 @@ int main(int argc, char *argv[])
 	cls.w=OSIZ_X;
 	cls.h=OSIZ_Y;
 	
+	// Fill out the guibits information
 	gui guibits;
 	guibits.screen=screen;
 	guibits.overlay=overlay;
@@ -296,6 +318,7 @@ int main(int argc, char *argv[])
 	guibits.small_button_p=small_button_p;
 	guibits.box_small=box_small;
 	
+	// If a filename was given on the cmdline, load it now
 	if(lfn!=NULL)
 	{
 		int e=load_map(lfn, &map, guibits, &worldx, &worldy, &levels, &groundlevel, &zslice, &uslice, &view, &dview);
@@ -303,6 +326,7 @@ int main(int argc, char *argv[])
 			return(2);
 	}
 	
+	// Main event loop (TODO: there is too much in here which needs refactoring out)
 	while(!errupt)
 	{
 		SDL_FillRect(screen, &cls, SDL_MapRGB(screen->format, 0, 0, 0));
@@ -438,9 +462,11 @@ int main(int argc, char *argv[])
 				}
 			}
 		}
+		
+		// Main view.  Voodoo stuff, just trust it to work
 		switch(viewmode)
 		{
-			case 0:
+			case 0: // Edit mode
 				{
 					SDL_Rect maparea={280, 8, 512, 512};
 					SDL_FillRect(screen, &maparea, SDL_MapRGB(screen->format, 0, 0, 0));
@@ -824,7 +850,7 @@ int main(int argc, char *argv[])
 					}
 				}
 			break;
-			case 1:
+			case 1: // Iso/3d view
 				{
 					SDL_Rect maparea={280, 0, 520, 520};
 					SDL_FillRect(screen, &maparea, SDL_MapRGB(screen->format, 0, 0, 0));
@@ -1104,7 +1130,7 @@ int main(int argc, char *argv[])
 		}
 		
 		if(lastr>1)
-			lastr=0;
+			lastr=0; // to do with rectangle fills and the Dragon Conditional
 		
 		// in edit mode, show current tool
 		if(viewmode==0)
@@ -1126,8 +1152,9 @@ int main(int argc, char *argv[])
 			SDL_BlitSurface(overlay, NULL, screen, &over);
 		SDL_Flip(screen);
 		
-		dold=drag;
-				
+		dold=drag; // old buttons-state
+		
+		// Loop through events
 		while(SDL_PollEvent(&event))
 		{
 			switch (event.type)
@@ -1135,11 +1162,11 @@ int main(int argc, char *argv[])
 				case SDL_QUIT:
 					errupt++;
 				break;
-				case SDL_KEYDOWN:
+				case SDL_KEYDOWN: // All the keypresses
 					if(event.key.type==SDL_KEYDOWN)
 					{
 						SDL_keysym key=event.key.keysym;
-						if(key.sym==SDLK_q)
+						if(key.sym==SDLK_q) // quit (asks for confirmation)
 						{
 							bool quit=true;
 							if(confirms)
@@ -1150,11 +1177,11 @@ int main(int argc, char *argv[])
 							if(quit)
 								errupt++;
 						}
-						if(key.sym==SDLK_0)
+						if(key.sym==SDLK_0) // toggle the console / minimap
 						{
 							showconsole=!showconsole;
 						}
-						if(key.sym==SDLK_LEFT)
+						if(key.sym==SDLK_LEFT) // move viewport
 						{
 							dview.x=(key.mod&KMOD_SHIFT)?-8:-1;
 						}
@@ -1170,7 +1197,7 @@ int main(int argc, char *argv[])
 						{
 							dview.y=(key.mod&KMOD_SHIFT)?-8:-1;
 						}
-						if((key.sym==SDLK_PAGEDOWN) && (zslice>0))
+						if((key.sym==SDLK_PAGEDOWN) && (zslice>0)) // Z-level clone/shift
 						{
 							bool copy=true;
 							bool shft=(key.mod&(KMOD_LCTRL|KMOD_RCTRL));
@@ -1240,7 +1267,7 @@ int main(int argc, char *argv[])
 								colconsole(screen, overlay, 20, "Z-level copy cancelled.", small_font, 128, 104, 32);
 							}
 						}
-						if((key.sym==SDLK_n) && (key.mod & KMOD_ALT))
+						if((key.sym==SDLK_n) && (key.mod & KMOD_ALT)) // New/clear map
 						{
 							bool clear=true;
 							if(confirms)
@@ -1255,7 +1282,7 @@ int main(int argc, char *argv[])
 									return(2);
 							}
 						}
-						if(key.sym==SDLK_l)
+						if(key.sym==SDLK_l) // Load new map
 						{
 							bool load=true;
 							if(confirms)
@@ -1279,7 +1306,7 @@ int main(int argc, char *argv[])
 								}
 							}
 						}
-						if(key.sym==SDLK_s)
+						if(key.sym==SDLK_s) // Save the map
 						{
 							char * boxtextlines[] = {"Save Map:", "Enter a filename (max 28 chars)", "Blank to cancel"};
 							char * filename = textentry(screen, box_small, boxtextlines, 3, small_font, 192, 224, 255);
@@ -1303,10 +1330,10 @@ int main(int argc, char *argv[])
 								}
 								else
 								{
-									fprintf(fp, "DFDM%c%c%c\n", VERSION_MAJ, VERSION_MIN, VERSION_REV);
+									fprintf(fp, "DFDM%c%c%c\n", VERSION_MAJ, VERSION_MIN, VERSION_REV); // DFDM identifies a DFD map
 									fprintf(fp, "%u,%u,%u,%u\n", levels, worldx, worldy, groundlevel);
 									int x,y,z;
-									for(z=0;z<levels;z++)
+									for(z=0;z<levels;z++) // Write all the map data as one big binary blob
 									{
 										for(y=0;y<worldy;y++)
 										{
@@ -1316,14 +1343,14 @@ int main(int argc, char *argv[])
 												fputc(map[z][x][y].object, fp);
 											}
 										}
-										fputc('\n', fp);
+										fputc('\n', fp); // with a newline marker every Zlevel to help spot corrupted maps
 									}
 									fclose(fp);
 									colconsole(screen, overlay, 20, "Saved successfully!", small_font, 96, 224, 96);
 								}
 							}
 						}
-						if(key.sym==SDLK_x)
+						if(key.sym==SDLK_x) // Export as text
 						{
 							char * boxtextlines[] = {"Export Design:", "Enter a filename (max 28 chars)", "Blank to cancel"};
 							char * filename = textentry(screen, box_small, boxtextlines, 3, small_font, 192, 224, 255);
@@ -1348,11 +1375,11 @@ int main(int argc, char *argv[])
 								{
 									fprintf(fp, "Generated by DF Designer %hhu.%hhu.%hhu\n", VERSION_MAJ, VERSION_MIN, VERSION_REV);
 									int x,y,z;
-									int nx=worldx,ny=worldy,nz=levels,mx=0,my=0,mz=0;
-									bool same[levels];
+									int nx=worldx,ny=worldy,nz=levels,mx=0,my=0,mz=0; // min and max of each dimension (we chop off empty space)
+									bool same[levels]; // is a level the same as the one below it?  If so we can skip it
 									for(z=0;z<levels;z++)
 									{
-										if(z>0)
+										if(z>0) // Compute the same[]ness
 										{
 											same[z]=true;
 											for(y=0;(y<worldy) && same[z];y++)
@@ -1372,14 +1399,15 @@ int main(int argc, char *argv[])
 										{
 											for(x=0;x<worldx;x++)
 											{
+												// Is this tile empty?  If not, it needs to be within the min/max
 												int here=map[z][x][y].data;
 												if(z>groundlevel)
 												{
 													if(here!=0)
 													{
-														nx=min(nx, x);
-														ny=min(ny, y);
-														nz=min(nz, z);
+														nx=min(nx, x); // TODO: make a struct and a function for these
+														ny=min(ny, y); // so we don't have to repeat these six lines
+														nz=min(nz, z); // for each detection
 														mx=max(mx, x);
 														my=max(my, y);
 														mz=max(mz, z);
@@ -1424,8 +1452,8 @@ int main(int argc, char *argv[])
 												fputc('\n', fp);
 												for(x=nx;x<=mx;x++)
 												{
-													disp_tile xtile = tchar(map, x, y, z, worldx, worldy, groundlevel);
-													if(xtile.v>127)
+													disp_tile xtile = tchar(map, x, y, z, worldx, worldy, groundlevel); // turn it into a DF-Tile
+													if(xtile.v>127) // Extended ASCII?  Use the xatiles from inc/437.h
 														fprintf(fp, "%s", xatiles[xtile.v-128]);
 													else
 														fputc(xtile.v, fp);
@@ -1440,10 +1468,10 @@ int main(int argc, char *argv[])
 								}
 							}
 						}
-						if(key.sym==SDLK_y)
+						if(key.sym==SDLK_y) // QuickFort export, in many ways dodgy
 						{
 							char * boxtextlines[] = {"Export Quickfort:", "Enter a filename (max 28 chars)", ".csv extension will be added", "automatically.  Blank to cancel"};
-							char * filename = textentry(screen, box_small, boxtextlines, 4, small_font, 192, 224, 255);
+							char * filename = textentry(screen, box_small, boxtextlines, 4, small_font, 192, 224, 255); // prompt for a filename
 							if(*filename==0)
 							{
 								colconsole(screen, overlay, 20, "Export cancelled", small_font, 128, 104, 32);
@@ -1451,7 +1479,7 @@ int main(int argc, char *argv[])
 							else
 							{
 								char csvfile[strlen(filename)+5];
-								sprintf(csvfile, "%s.csv", filename);
+								sprintf(csvfile, "%s.csv", filename); // append .csv to the filename
 								free(filename);
 								char string[100];
 								sprintf(string, "yxport: Exporting current zslice to: %s...", csvfile);
@@ -1466,7 +1494,7 @@ int main(int argc, char *argv[])
 								}
 								else
 								{
-									if(zslice>=groundlevel)
+									if(zslice>=groundlevel) // we can only do above-ground stuff so far
 										fprintf(fp, "#build Generated by DF Designer %hhu.%hhu.%hhu\n", VERSION_MAJ, VERSION_MIN, VERSION_REV);
 									else
 									{
@@ -1475,7 +1503,7 @@ int main(int argc, char *argv[])
 										goto qfstop;
 									}
 									int x,y;
-									int nx=worldx,ny=worldy,mx=0,my=0;
+									int nx=worldx,ny=worldy,mx=0,my=0; // all that fun with mins and maxes again, just like in Text Export
 									for(y=0;y<worldy;y++)
 									{
 										for(x=0;x<worldx;x++)
@@ -1518,7 +1546,7 @@ int main(int argc, char *argv[])
 										for(x=nx;x<=mx;x++)
 										{
 											int here=map[zslice][x][y].data;
-											char *qfbuild;
+											char *qfbuild; // Turn the tile into a cell for QF
 											if(here&TILE_ROCK)
 											{
 												qfbuild="Cw";
@@ -1533,7 +1561,7 @@ int main(int argc, char *argv[])
 											}
 											else if(here&TILE_STAIRS)
 											{
-												disp_tile xtile = tchar(map, x, y, zslice, worldx, worldy, groundlevel);
+												disp_tile xtile = tchar(map, x, y, zslice, worldx, worldy, groundlevel); // Use tchar to compute what kind of stairs we need (up/down/both)
 												switch(xtile.v)
 												{
 													case '>':
@@ -1545,7 +1573,7 @@ int main(int argc, char *argv[])
 													case 'X':
 														qfbuild="Cx";
 													break;
-													default:
+													default: // If something went wrong, we'll just use a 'both' because that covers everything
 														fprintf(stderr, "yxport: A staircase could not be properly deduced\n");
 														colconsole(screen, overlay, 20, "yxport: A staircase could not be properly deduced", small_font, 160, 160, 128);
 														qfbuild="Cx";
@@ -1600,7 +1628,8 @@ int main(int argc, char *argv[])
 							}
 						}
 						int x=view.x+(mouse.x-280)/8,
-							y=view.y+(mouse.y-8)/8;
+							y=view.y+(mouse.y-8)/8; // x and y coords of current cursor position
+						// Tool keys (will soon be replaced with the newgui, so I shan't fully comment them)
 						if(key.sym==SDLK_r)
 						{
 							if(viewmode==0)
@@ -1757,7 +1786,7 @@ int main(int argc, char *argv[])
 							}
 							lastkey='p';
 						}
-						if((key.sym==SDLK_GREATER) || (key.sym==SDLK_PERIOD))
+						if((key.sym==SDLK_GREATER) || (key.sym==SDLK_PERIOD)) // Zslice - which Zlevel to edit (Editmode) / top Zlevel to show (Iso-mode)
 						{
 							zslice=max(zslice-1, 0);
 							uslice=min(uslice, zslice);
@@ -1772,7 +1801,7 @@ int main(int argc, char *argv[])
 							sprintf(string, "zslice %u", zslice);
 							console(screen, overlay, 8, string, small_font);
 						}
-						if(key.sym==SDLK_RIGHTBRACKET)
+						if(key.sym==SDLK_RIGHTBRACKET) // Rotate 3d view
 						{
 							if(key.mod&(KMOD_LSHIFT | KMOD_RSHIFT))
 								dph=1;
@@ -1786,7 +1815,7 @@ int main(int argc, char *argv[])
 							else
 								dth=-1;
 						}
-						if((key.sym==SDLK_PLUS) || (key.sym==SDLK_EQUALS))
+						if((key.sym==SDLK_PLUS) || (key.sym==SDLK_EQUALS)) // Uslice - lowest Zlevel to show in Iso/3d mode
 						{
 							uslice=max(uslice-1, 0);
 							char string[16];
@@ -1800,7 +1829,7 @@ int main(int argc, char *argv[])
 							sprintf(string, "uslice %u", uslice);
 							console(screen, overlay, 8, string, small_font);
 						}
-						if(key.sym==SDLK_m)
+						if(key.sym==SDLK_m) // Semislice/Shadowing
 						{
 							semislice=!semislice;
 							if(viewmode==1)
@@ -1869,7 +1898,7 @@ int main(int argc, char *argv[])
 							else
 								console(screen, overlay, 8, "semislice OFF", small_font);
 						}
-						if(key.sym==SDLK_HASH)
+						if(key.sym==SDLK_HASH) // Count everything
 						{
 							console(screen, overlay, 8, "Counting materials...", small_font);
 							int walls=0,floors=0,doors=0,stairs=0,beds=0,chairs=0,tables=0,statues=0;
@@ -1880,8 +1909,8 @@ int main(int argc, char *argv[])
 								{
 									for(x=0;x<worldx;x++)
 									{
-										int here=map[z][x][y].data;
-										if((z>=groundlevel) && (here & (TILE_ROCK|TILE_FORTS)))
+										int here=map[z][x][y].data; // If we detect a whatever, we increment that counter
+										if((z>=groundlevel) && (here & (TILE_ROCK|TILE_FORTS))) // Forts are made from walls
 											walls++;
 										else if(here & TILE_FLOOR)
 											floors++;
@@ -1914,7 +1943,7 @@ int main(int argc, char *argv[])
 						{
 							groundlevel=zslice;
 						}
-						if(key.sym==SDLK_h)
+						if(key.sym==SDLK_h) // This is too long, hence the newgui project which will remove most of these keys
 						{
 							showconsole=true;
 							console(screen, overlay, 0, "==DF Designer Keystroke Help==", small_font);
@@ -1981,7 +2010,7 @@ int main(int argc, char *argv[])
 						*/
 					}
 				break;
-				case SDL_KEYUP:
+				case SDL_KEYUP: // Keyups: stop various continuous things
 					if(event.key.type==SDL_KEYUP)
 					{
 						SDL_keysym key=event.key.keysym;
@@ -2011,7 +2040,7 @@ int main(int argc, char *argv[])
 					SDL_Event makekey;
 					switch(button)
 					{
-						case SDL_BUTTON_LEFT:
+						case SDL_BUTTON_LEFT: // left-click means place, which we currently do by queueing a keyboard event (newgui will change this)
 							makekey.type=SDL_KEYDOWN;
 							makekey.key.type=SDL_KEYDOWN;
 							makekey.key.keysym.sym=lastkey;
@@ -2020,7 +2049,7 @@ int main(int argc, char *argv[])
 								colconsole(screen, overlay, 8, " Cancelled fill.", small_font, 64, 144, 64);
 							lastr=0;
 						break;
-						case SDL_BUTTON_RIGHT:
+						case SDL_BUTTON_RIGHT: // fun with rectangle fills (works with the Dragon Conditional)
 							if(lastr==0)
 							{
 								lastx=mouse.x;
@@ -2069,10 +2098,13 @@ int main(int argc, char *argv[])
 				break;
 			}
 		}
+		
+		// Apply viewport movement / 3dview rotation
 		view.x=max(min(view.x+dview.x, worldx-1), 0);
 		view.y=max(min(view.y+dview.y, worldy-1), 0);
 		ths+=dth;
 		phs+=dph;
+		
 		SDL_Delay(18);
 	}
 
@@ -2084,11 +2116,12 @@ int main(int argc, char *argv[])
 	return(0);
 }
 
-int console(SDL_Surface * screen, SDL_Surface * overlay, int delay, char * text, TTF_Font * font)
+int console(SDL_Surface * screen, SDL_Surface * overlay, int delay, char * text, TTF_Font * font) // shortcut for a simple grey console entry
 {
 	return(colconsole(screen, overlay, delay, text, font, 192, 192, 192));
 }
 
+// Writes a message to the scrolly console, in the given colour
 int colconsole(SDL_Surface * screen, SDL_Surface * overlay, int delay, char * text, TTF_Font * font, char r, char g, char b)
 {
 	if(SDL_MUSTLOCK(overlay))
@@ -2137,6 +2170,7 @@ int colconsole(SDL_Surface * screen, SDL_Surface * overlay, int delay, char * te
 	return(0);
 }
 
+// Tile preprocessor, produces an ASCII/DF-TILE
 disp_tile tchar(tile ***map, int x, int y, int z, int worldx, int worldy, int groundlevel)
 {
 	disp_tile ret=wb;
@@ -2169,7 +2203,7 @@ disp_tile tchar(tile ***map, int x, int y, int z, int worldx, int worldy, int gr
 	}
 	else if(map[z][x][y].data&TILE_ROCK)
 	{	
-		if(z>=groundlevel)
+		if(z>=groundlevel) // We have some fun matching up walls to the directions they've got to connect
 		{
 			int dirs=0;
 			if(x>0 && map[z][x-1][y].data&(TILE_ROCK|TILE_DOOR|TILE_FORTS))
