@@ -45,7 +45,7 @@ ITEM:4:Ed/DF-Tiles:x
 ITEM:5:Console:?
 ITEM:6:Shadow
 
-MENU:5:7
+MENU:5:8
 ITEM:0:Go Up
 ITEM:1:Clone/abv
 ITEM:2:Clone/blw
@@ -53,3 +53,4 @@ ITEM:3:Shift Dn
 ITEM:4:Shift Up
 ITEM:5:Count
 ITEM:6:Ground
+ITEM:7:About

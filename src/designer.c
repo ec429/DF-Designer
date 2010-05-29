@@ -189,7 +189,7 @@ int main(int argc, char *argv[])
 	
 	cls.h-=20;
 	{
-		char vermsg[32];
+		char vermsg[80];
 		sprintf(vermsg, "DF Designer %hhu.%hhu.%hhu", VERSION_MAJ, VERSION_MIN, VERSION_REV);
 		console(screen, overlay, 20, vermsg, small_font);
 		fprintf(stderr, "%s\n", vermsg);
@@ -2192,6 +2192,23 @@ int main(int argc, char *argv[])
 				break;
 				case 56: // Ground to Zslice
 					groundlevel=zslice;
+				break;
+				case 57: // About
+				{
+					showconsole=true;
+					colconsole(screen, overlay, 20, "About DF Designer", small_font, 255, 255, 255);
+					char string[100];
+					sprintf(string, "Version %hhu.%hhu.%hhu", VERSION_MAJ, VERSION_MIN, VERSION_REV); // TODO: VERSION_GIT
+					colconsole(screen, overlay, 20, string, small_font, 127, 255, 127);
+					FILE *fp=fopen("init/credits", "r");
+					while(!feof(fp))
+					{
+						char *line=getl(fp);
+						colconsole(screen, overlay, 20, line, small_font, 127, 127, 255);
+						free(line);
+					}
+					fclose(fp);
+				}
 				break;
 				default:
 					fprintf(stderr, "Error - menuitem %d/%d undefined\n", menu, mdo);
