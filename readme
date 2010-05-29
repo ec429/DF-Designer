@@ -52,3 +52,6 @@ That's basically it.  You might wonder what the rules are for placing things on 
 ==Export Floor Map==
 Pressing 'x' will export a floor map.  Note: Remember not to export the floor map over the top of the map save; use a different filename!  (Suggestion: append '.txt' for the floor map)  DF Designer doesn't have a function to import from floor-maps; you don't want to lose your map save, right?
 Cunning features of the floor map include condensing of series of identical Z-levels.
+
+==Troubleshooting==
+If the program refuses to run, or the window disappears almost straight away, or anything like that, try running from the command line - that way you'll see the error message, which should generally help (and if it doesn't, you can include the error message in your bug report).

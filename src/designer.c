@@ -64,6 +64,16 @@ gui;
 
 typedef struct
 {
+	char *text;
+	char key;
+	char flags;
+}
+menuitem;
+
+#define MI_FLAG_DISABLED	1
+
+typedef struct
+{
 	char data;
 	char object;
 }
@@ -150,6 +160,7 @@ int main(int argc, char *argv[])
 
 	TTF_Init();
 	atexit(TTF_Quit);
+	TTF_Font *tiny_font=TTF_OpenFont(FONT_FILE, 8);
 	TTF_Font *small_font=TTF_OpenFont(FONT_FILE, 11);
 	TTF_Font *big_font=TTF_OpenFont(FONT_FILE, 24);
 
@@ -181,6 +192,140 @@ int main(int argc, char *argv[])
 		console(screen, overlay, 20, vermsg, small_font);
 		fprintf(stderr, "%s\n", vermsg);
 	}
+	
+	fprintf(stderr, "Reading init/menu\n");
+	console(screen, overlay, 20, "Reading init/menu", small_font);
+	FILE *mfp = fopen("init/menu", "r");
+	char ** mfile=NULL;int nlines=0;
+	while(!feof(mfp))
+	{
+		nlines++;
+		mfile=(char **)realloc(mfile, nlines*sizeof(char *));
+		mfile[nlines-1]=getl(mfp);
+	}
+	/* parse init/menu (newgui text & shortcuts) with a state machine */
+	int n, state=0;
+	int i=0,j;
+	menuitem ** menus = NULL;
+	int nmenus=0;
+	int * nitems = NULL;
+	for(n=0;n<nlines;n++)
+	{
+		if(!((mfile[n][0]=='#') || (mfile[n][0]==0)))
+		{
+			switch(state)
+			{
+				case 0: // looking for a MENU:i:x
+					if(strncmp(mfile[n], "MENU:", 5)==0)
+					{
+						int p,q;
+						if(sscanf(mfile[n]+5, "%d:%d", &p, &q)==2)
+						{
+							if(p==i)
+							{
+								if(i==0)
+								{
+									nmenus=q;
+									menus = (menuitem **)malloc(nmenus*sizeof(menuitem *));
+									nitems = (int *)malloc(nmenus*sizeof(int));
+								}
+								nitems[i]=q;
+								menus[i]=(menuitem *)malloc(nitems[i]*sizeof(menuitem));
+								state=1;
+								j=0;
+							}
+							else
+							{
+								fprintf(stderr, "%d Wrong number on MENU line, init/menu:%d\n", state, n+1);
+								return(3);
+							}
+						}
+						else
+						{
+							fprintf(stderr, "%d Malformed MENU line, init/menu:%d\n", state, n+1);
+							return(3);
+						}
+					}
+					else
+					{
+						fprintf(stderr, "%d Unexpected line, init/menu:%d\n", state, n+1);
+						return(3);
+					}
+				break;
+				case 1: // looking for an ITEM:j:...
+					if(strncmp(mfile[n], "ITEM:", 5)==0)
+					{
+						int p;
+						if(sscanf(mfile[n]+5, "%d:", &p)==1)
+						{
+							if(p==j)
+							{
+								char * left=strchr(mfile[n]+5, ':'), * right=strchr(left+1, ':');
+								if(right==NULL)
+								{
+									menus[i][j].text=strdup(left+1);
+									menus[i][j].key=0;
+									menus[i][j].flags=0;
+								}
+								else
+								{
+									*right=0;
+									menus[i][j].text=strdup(left+1);
+									right++;
+									if(*right!=':')
+									{
+										menus[i][j].key=*right;
+										right++;
+									}
+									menus[i][j].flags=0;
+									if(*right==':')
+									{
+										if(strstr(right, "DISABLED")!=NULL)
+										{
+											menus[i][j].flags|=MI_FLAG_DISABLED;
+										}
+									}
+								}
+								j++;
+								if(j==nitems[i])
+								{
+									i++;
+									if(i==nmenus)
+									{
+										state=2;
+									}
+									state=0;
+								}
+							}
+							else
+							{
+								fprintf(stderr, "%d Wrong number on ITEM line, init/menu:%d\n", state, n+1);
+								return(3);
+							}
+						}
+						else
+						{
+							fprintf(stderr, "%d Malformed ITEM line, init/menu:%d\n", state, n+1);
+							return(3);
+						}
+					}
+					else
+					{
+						fprintf(stderr, "%d Unexpected line, init/menu:%d\n", state, n+1);
+						return(3);
+					}
+				break;
+				default:
+					fprintf(stderr, "%d Bad state in parser-fsm, init/menu:%d\n", state, n+1);
+					return(3);
+				break;
+			}
+		}
+		free(mfile[n]);
+	}
+	free(mfile);
+	
+	fprintf(stderr, "Loading gui images...\n");
 	console(screen, overlay, 20, "Loading gui images...", small_font);
 	
 	SDL_Surface * small_button_u = IMG_Load("img/small_button_u.png");
@@ -194,31 +339,19 @@ int main(int argc, char *argv[])
 		return(1);
 	}
 	
-	FILE *mfp = fopen("init/menu", "r");
-	char ** mfile=NULL;int nlines=0;
-	while(!feof(mfp))
-	{
-		nlines++;
-		mfile=(char **)realloc(mfile, nlines*sizeof(char *));
-		mfile[nlines-1]=getl(mfp);
-	}
-	/* TODO: parse init/menu (newgui text & shortcuts) */
-	// with a state machine
-	// don't forget to free() the *mfiles
-	
 	/* read in the newgui images - first the 'base' ones, then try to open the art ones and if not, procedurally generate from the base ones & text */
-	SDL_Surface * menubase[6], * menubtn[6][10];
+	SDL_Surface * menubase[nmenus], * menubtn[nmenus][10];
 	{
 		char * basename=strdup("img/menu/ / ");
 		int i,j;
-		for(i=0;i<6;i++)
+		for(i=0;i<nmenus;i++)
 		{
 			basename[9]=i+'0';
-			basename[11]='0';
+			basename[11]='b';
 			menubase[i]=IMG_Load(basename);
 			if(!menubase[i])
 				goto imgfail; // there's nothing wrong with gotos.  Please don't get stroppy about them.
-			for(j=0;j<10;j++)
+			for(j=0;j<nitems[i];j++)
 			{
 				basename[11]=j+'0';
 				menubtn[i][j]=IMG_Load(basename);
@@ -226,13 +359,30 @@ int main(int argc, char *argv[])
 				{
 					menubtn[i][j]=SDL_CreateRGBSurface(SDL_SWSURFACE, 48, 48, OBPP, 0, 0, 0, 0);
 					SDL_BlitSurface(j?menubase[i]:menubase[0], NULL, menubtn[i][j], &cls);
-					SDL_Rect txtrect = {6, 18, 36, 12};
-					char *text="btn_text";
-					SDL_Color clrFg = {255, 255, 255, 0};
-					SDL_Surface *sText = TTF_RenderText_Solid(small_font, text, clrFg);
+					SDL_Rect txtrect = {2, 20, 44, 8};
+					char *text=menus[i][j].text;
+					int br=(menus[i][j].flags&MI_FLAG_DISABLED)?127:255;
+					SDL_Color clrFg = {br, br, br, 0};
+					SDL_Surface *sText = TTF_RenderText_Solid(tiny_font, text, clrFg);
 					SDL_BlitSurface(sText, NULL, menubtn[i][j], &txtrect);
 					SDL_FreeSurface(sText);
 				}
+				else
+				{
+					SDL_Rect txtrect = {2, 36, 44, 8};
+					char *text=menus[i][j].text;
+					SDL_Color clrFg = {127, 127, 127, 0};
+					SDL_Surface *sText = TTF_RenderText_Solid(tiny_font, text, clrFg);
+					SDL_BlitSurface(sText, NULL, menubtn[i][j], &txtrect);
+					SDL_FreeSurface(sText);
+				}
+				SDL_Rect txtrect = {4, 4, 8, 8};
+				char text[2]={j+'0',0};
+				int br=(menus[i][j].flags&MI_FLAG_DISABLED)?127:255;
+				SDL_Color clrFg = {br, br, br, 0};
+				SDL_Surface *sText = TTF_RenderText_Solid(tiny_font, text, clrFg);
+				SDL_BlitSurface(sText, NULL, menubtn[i][j], &txtrect);
+				SDL_FreeSurface(sText);
 			}
 		}
 		free(basename);
@@ -294,6 +444,10 @@ int main(int argc, char *argv[])
 	cls.y=0;
 	cls.w=OSIZ_X;
 	cls.h=OSIZ_Y;
+	
+	int menu=0;
+	int msel=-1;
+	int mdo=-1;
 	
 	gui guibits;
 	guibits.screen=screen;
@@ -1114,7 +1268,15 @@ int main(int argc, char *argv[])
 		if(lastr>1)
 			lastr=0;
 		
-		// TODO: MENU!
+		// Display the menu
+		int j;
+		for(j=0;j<nitems[menu];j++)
+		{
+			SDL_Rect loc;
+			loc.x=(j==0)?732:252+(j*48);
+			loc.y=532;
+			SDL_BlitSurface(menubtn[menu][j], NULL, screen, &loc);
+		}
 		
 		// apply console overlay
 		if(showconsole)
@@ -2007,10 +2169,23 @@ int main(int argc, char *argv[])
 					switch(button)
 					{
 						case SDL_BUTTON_LEFT:
-							makekey.type=SDL_KEYDOWN;
-							makekey.key.type=SDL_KEYDOWN;
-							makekey.key.keysym.sym=lastkey;
-							SDL_PushEvent(&makekey);
+							// menuarea 300, 532, 480, 48
+							// maparea 280, 8, 512, 512
+							if((mouse.x>=280) && (mouse.x<792) && (mouse.y>=8) && (mouse.y<520))
+							{
+								makekey.type=SDL_KEYDOWN;
+								makekey.key.type=SDL_KEYDOWN;
+								makekey.key.keysym.sym=lastkey;
+								SDL_PushEvent(&makekey);
+							}
+							else if((mouse.x>=300) && (mouse.x<780) && (mouse.y>=532) && (mouse.y<580))
+							{
+								int which=((mouse.x-252)/48)%10;
+								if(which<nitems[menu])
+								{
+									msel=which;
+								}
+							}
 							if(lastr)
 								colconsole(screen, overlay, 8, " Cancelled fill.", small_font, 64, 144, 64);
 							lastr=0;
@@ -2049,6 +2224,27 @@ int main(int argc, char *argv[])
 							makekey.key.type=SDL_KEYUP;
 							makekey.key.keysym.sym=lastkey;
 							SDL_PushEvent(&makekey);
+							if((mouse.x>=300) && (mouse.x<780) && (mouse.y>=532) && (mouse.y<580))
+							{
+								int which=((mouse.x-252)/48)%10;
+								if(which==msel)
+								{
+									if(menu==0)
+									{
+										menu=msel;
+										msel=-1;
+									}
+									else if(msel==0)
+									{
+										menu=0;
+										msel=-1;
+									}
+									else
+									{
+										mdo=msel;
+									}
+								}
+							}
 						break;
 						case SDL_BUTTON_RIGHT:
 							makekey.type=SDL_KEYUP;
@@ -2064,6 +2260,10 @@ int main(int argc, char *argv[])
 				break;
 			}
 		}
+		
+		// TODO: switch() on mdo & menu if mdo!=-1
+		
+		mdo=-1;
 		view.x=max(min(view.x+dview.x, worldx-1), 0);
 		view.y=max(min(view.y+dview.y, worldy-1), 0);
 		ths+=dth;
