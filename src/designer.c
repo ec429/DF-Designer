@@ -191,21 +191,37 @@ int main(int argc, char *argv[])
 		fprintf(stderr, "IMG_Load: %s\n", IMG_GetError());
 		return(1);
 	}
+	
+	/* TODO:read & parse init/menu (newgui text & shortcuts) */
+	
 	/* read in the newgui images - first the 'base' ones, then try to open the art ones and if not, procedurally generate from the base ones & text */
-	SDL_Surface * menubase[6];
-	menubase[0]=IMG_Load("img/menu/0");
-	if(!menubase[0])
-		goto imgfail; // there's nothing wrong with gotos.  Please don't get stroppy about them.
-	else
+	SDL_Surface * menubase[6], * menubtn[6][10];
 	{
-		char * basename=strdup("img/menu/ /0");
-		int i;
-		for(i=1;i<6;i++)
+		char * basename=strdup("img/menu/ / ");
+		int i,j;
+		for(i=0;i<6;i++)
 		{
 			basename[9]=i+'0';
+			basename[11]='0';
 			menubase[i]=IMG_Load(basename);
 			if(!menubase[i])
-				goto imgfail;
+				goto imgfail; // there's nothing wrong with gotos.  Please don't get stroppy about them.
+			for(j=0;j<10;j++)
+			{
+				basename[11]=j+'0';
+				menubtn[i][j]=IMG_Load(basename);
+				if(!menubtn[i][j])
+				{
+					menubtn[i][j]=SDL_CreateRGBSurface(SDL_SWSURFACE, 48, 48, OBPP, 0, 0, 0, 0);
+					SDL_BlitSurface(j?menubase[i]:menubase[0], NULL, menubtn[i][j], &cls);
+					SDL_Rect txtrect = {6, 18, 36, 12};
+					char *text="btn_text";
+					SDL_Color clrFg = {255, 255, 255, 0};
+					SDL_Surface *sText = TTF_RenderText_Solid(small_font, text, clrFg);
+					SDL_BlitSurface(sText, NULL, menubtn[i][j], &txtrect);
+					SDL_FreeSurface(sText);
+				}
+			}
 		}
 		free(basename);
 	}
