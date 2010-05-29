@@ -1278,8 +1278,60 @@ int main(int argc, char *argv[])
 		{
 			SDL_Rect loc;
 			loc.x=(j==0)?732:252+(j*48);
-			loc.y=532;
+			loc.y=528;
 			SDL_BlitSurface(menubtn[menu][j], NULL, screen, &loc);
+		}
+		
+		// Show current tool
+		int tooli=0,toolj=0;
+		switch(lastkey)
+		{
+			case 'r':
+				tooli=2;toolj=1;
+			break;
+			case 'f':
+				tooli=2;toolj=2;
+			break;
+			case 'd':
+				tooli=2;toolj=3;
+			break;
+			case 'g':
+				tooli=2;toolj=4;
+			break;
+			case 'w':
+				tooli=2;toolj=5;
+			break;
+			case 't':
+				tooli=2;toolj=6;
+			break;
+			case 'o':
+				tooli=2;toolj=7;
+			break;
+			case 'a':
+				tooli=3;toolj=1;
+			break;
+			case 'b':
+				tooli=3;toolj=2;
+			break;
+			case 'c':
+				tooli=3;toolj=3;
+			break;
+			case 'u':
+				tooli=3;toolj=4;
+			break;
+			case 'p':
+				tooli=3;toolj=5;
+			break;
+			default:
+				tooli=0;
+			break;
+		}
+		if(tooli)
+		{
+			SDL_Rect loc;
+			loc.x=300;
+			loc.y=584;
+			SDL_BlitSurface(menubtn[tooli][toolj], NULL, screen, &loc);
 		}
 		
 		// apply console overlay
@@ -1300,10 +1352,6 @@ int main(int argc, char *argv[])
 					if(event.key.type==SDL_KEYDOWN)
 					{
 						SDL_keysym key=event.key.keysym;
-						if(key.sym==SDLK_0)
-						{
-							showconsole=!showconsole;
-						}
 						if(key.sym==SDLK_LEFT)
 						{
 							dview.x=(key.mod&KMOD_SHIFT)?-8:-1;
@@ -1319,76 +1367,6 @@ int main(int argc, char *argv[])
 						if(key.sym==SDLK_UP)
 						{
 							dview.y=(key.mod&KMOD_SHIFT)?-8:-1;
-						}
-						if((key.sym==SDLK_PAGEDOWN) && (zslice>0))
-						{
-							bool copy=true;
-							bool shft=(key.mod&(KMOD_LCTRL|KMOD_RCTRL));
-							if(confirms)
-							{
-								char * boxtextlines[] = {"Copy from z-level below --", "are you sure?", "There is no undo!"};
-								if(shft)
-									boxtextlines[0]="Shift up one z-level --";
-								copy=ynbox(screen, box_small, boxtextlines, 3, small_button_u, small_button_p, small_font, big_font, "Yes, Do it!", "No, Stop!", 0, 24, 48, 96, 48, 96, 192);
-							}
-							if(copy)
-							{
-								colconsole(screen, overlay, 8, shft?"Shifting up one z-level...":"Copying from z-level below...", small_font, 96, 96, 96);
-								int x,y,z;
-								tile fill={TILE_ROCK,0};
-								for(z=shft?levels-2:zslice;z>=(shft?0:zslice);z--)
-								{
-									for(x=0;x<worldx;x++)
-									{
-										for(y=0;y<worldy;y++)
-										{
-											map[z][x][y]=(z==0)?fill:map[z-1][x][y]; // If there are ever pointers, we'll have to watch out for this :S
-										}
-									}
-								}
-								if(shft)
-									groundlevel++;
-								colconsole(screen, overlay, 20, "Done!", small_font, 32, 128, 32);
-							}
-							else
-							{
-								colconsole(screen, overlay, 20, "Z-level copy cancelled.", small_font, 128, 104, 32);
-							}
-						}
-						if((key.sym==SDLK_PAGEUP) && (zslice<levels-1))
-						{
-							bool copy=true;
-							bool shft=(key.mod&(KMOD_LCTRL|KMOD_RCTRL));
-							if(confirms)
-							{
-								char * boxtextlines[] = {"Copy from z-level above --", "are you sure?", "There is no undo!"};
-								if(shft)
-									boxtextlines[0]="Shift down one z-level --";
-								copy=ynbox(screen, box_small, boxtextlines, 3, small_button_u, small_button_p, small_font, big_font, "Yes, Do it!", "No, Stop!", 0, 24, 48, 96, 48, 96, 192);
-							}
-							if(copy)
-							{
-								colconsole(screen, overlay, 8, shft?"Shifting down one z-level...":"Copying from z-level above...", small_font, 96, 96, 96);
-								int x,y,z;
-								tile fill={0,0};
-								for(z=shft?1:zslice;z<(shft?levels:zslice+1);z++)
-								{
-									for(x=0;x<worldx;x++)
-									{
-										for(y=0;y<worldy;y++)
-										{
-											map[z][x][y]=(z==levels-1)?fill:map[z+1][x][y]; // If there are ever pointers, we'll have to watch out for this :S
-										}
-									}
-								}
-								if(shft)
-									groundlevel--;
-								colconsole(screen, overlay, 20, "Done!", small_font, 32, 128, 32);
-							}
-							else
-							{
-								colconsole(screen, overlay, 20, "Z-level copy cancelled.", small_font, 128, 104, 32);
-							}
 						}
 						int x=view.x+(mouse.x-280)/8,
 							y=view.y+(mouse.y-8)/8;
@@ -1500,212 +1478,28 @@ int main(int argc, char *argv[])
 							sprintf(string, "uslice %u", uslice);
 							console(screen, overlay, 8, string, small_font);
 						}
-						if(key.sym==SDLK_m)
-						{
-							semislice=!semislice;
-							if(viewmode==1)
-							{
-								if(semislice)
-									console(screen, overlay, 8, "semislice ON", small_font);
-								else
-									console(screen, overlay, 8, "semislice OFF", small_font);
-							}
-							else
-							{
-								if(semislice)
-									console(screen, overlay, 8, "shadowing OFF", small_font);
-								else
-									console(screen, overlay, 8, "shadowing ON", small_font);
-							}
-						}
-						if((key.sym==SDLK_QUESTION) || (key.sym==SDLK_SLASH))
+						if(key.sym==SDLK_z)
 						{
 							zslice=groundlevel;
 							char zmsg[16];
 							sprintf(zmsg, "zslice %u", zslice);
 							console(screen, overlay, 8, zmsg, small_font);
 						}
-						if(((key.sym==SDLK_SEMICOLON) && (key.mod & (KMOD_LSHIFT | KMOD_RSHIFT))) || (key.sym==SDLK_COLON))
+						if(key.sym==SDLK_v)
 						{
-							editmode=0;
-							console(screen, overlay, 8, "Edit-mode COLOURS selected", small_font);
-							if(semislice)
-								console(screen, overlay, 8, "shadowing OFF", small_font);
-							else
-								console(screen, overlay, 8, "shadowing ON", small_font);
-						}
-						if(((key.sym==SDLK_QUOTE) && (key.mod & (KMOD_LSHIFT | KMOD_RSHIFT))) || (key.sym==SDLK_AT))
-						{
-							editmode=1;
-							console(screen, overlay, 8, "Edit-mode DF-TILES selected", small_font);
-						}
-						if((key.sym==SDLK_e) || ((key.sym==SDLK_SPACE) && (viewmode!=0)))
-						{
-							viewmode=0;
-							console(screen, overlay, 8, "Editing mode selected", small_font);
-							switch(editmode)
+							switch(viewmode)
 							{
 								case 0:
-									console(screen, overlay, 8, "Edit-mode COLOURS selected", small_font);
-									if(semislice)
-										console(screen, overlay, 8, "shadowing OFF", small_font);
-									else
-										console(screen, overlay, 8, "shadowing ON", small_font);
+									menu=4;mdo=2;
 								break;
 								case 1:
-									console(screen, overlay, 8, "Edit-mode DF-TILES selected", small_font);
-								break;
 								default:
-									console(screen, overlay, 8, "Don't know what edit-mode this is... error!", small_font);
+									menu=4;mdo=1;
 								break;
 							}
 						}
-						else if((key.sym==SDLK_i) || ((key.sym==SDLK_SPACE) && (viewmode==0)))
+						if(key.sym==SDLK_SPACE)
 						{
-							viewmode=1;
-							console(screen, overlay, 8, "Isometric View mode selected", small_font);
-							if(semislice)
-								console(screen, overlay, 8, "semislice ON", small_font);
-							else
-								console(screen, overlay, 8, "semislice OFF", small_font);
-						}
-						if(key.sym==SDLK_HASH)
-						{
-							console(screen, overlay, 8, "Counting materials...", small_font);
-							int walls=0,floors=0,doors=0,stairs=0,beds=0,chairs=0,tables=0,statues=0;
-							int x,y,z;
-							for(z=0;z<levels;z++)
-							{
-								for(y=0;y<worldy;y++)
-								{
-									for(x=0;x<worldx;x++)
-									{
-										int here=map[z][x][y].data;
-										if((z>=groundlevel) && (here & (TILE_ROCK|TILE_FORTS)))
-											walls++;
-										else if(here & TILE_FLOOR)
-											floors++;
-										else if(here & TILE_DOOR)
-											doors++;
-										else if(here & TILE_STAIRS)
-											stairs++;
-										if(here & TILE_OBJECT)
-										{
-											int object=map[z][x][y].object;
-											if(object==OBJECT_BED)
-												beds++;
-											else if(object==OBJECT_CHAIR)
-												chairs++;
-											else if(object==OBJECT_TABLE)
-												tables++;
-											else if(object==OBJECT_STATUE)
-												statues++;
-										}
-									}
-								}
-							}
-							char string[100];
-							sprintf(string, " %u walls, %u floors, %u doors, %u stairs", walls, floors, doors, stairs);
-							colconsole(screen, overlay, 8, string, small_font, 255, 255, 255);
-							sprintf(string, " %u beds, %u chairs, %u tables, %u statues", beds, chairs, tables, statues);
-							colconsole(screen, overlay, 8, string, small_font, 255, 255, 255);
-						}
-						if(key.sym==SDLK_BACKSLASH)
-						{
-							groundlevel=zslice;
-						}
-						if(key.sym==SDLK_h)
-						{
-							showconsole=true;
-							console(screen, overlay, 0, "==DF Designer Keystroke Help==", small_font);
-							console(screen, overlay, 0, "h    this Help", small_font);
-							console(screen, overlay, 0, ";     list colour codes", small_font);
-							console(screen, overlay, 0, "s    Save map", small_font);
-							console(screen, overlay, 0, "l     Load map", small_font);
-							console(screen, overlay, 0, "0    toggle console/minimap", small_font);
-							console(screen, overlay, 0, "< >  zslice up/down", small_font);
-							console(screen, overlay, 0, "?     zslice to ground level", small_font);
-							console(screen, overlay, 0, "cursors move viewport", small_font);
-							console(screen, overlay, 0, "- +  uslice up/down", small_font);
-							console(screen, overlay, 0, "m    toggle shadowing (edit)/seMislice (iso)", small_font);
-							console(screen, overlay, 0, "r     dig/undig Rock", small_font);
-							console(screen, overlay, 0, "f     place/remove Floor", small_font);
-							console(screen, overlay, 0, "d    place/remove Door", small_font);
-							console(screen, overlay, 0, "g    place/remove Grass", small_font);
-							console(screen, overlay, 0, "w    place/remove Water", small_font);
-							console(screen, overlay, 0, "t     place/remove sTairs", small_font);
-							console(screen, overlay, 0, "o    place/remove fOrtifications", small_font);
-							console(screen, overlay, 0, "e    Edit mode", small_font);
-							console(screen, overlay, 0, ":       --COLOURS", small_font);
-							console(screen, overlay, 0, "@     --DF-TILES", small_font);
-							console(screen, overlay, 0, "i     Isometric mode", small_font);
-							console(screen, overlay, 0, "spc Mode toggle", small_font);
-							console(screen, overlay, 0, "#    Count materials", small_font);
-							console(screen, overlay, 0, "pgup copy the next z-level up", small_font);
-							console(screen, overlay, 0, "pgdn copy the next z-level down", small_font);
-							//console(screen, overlay, 0, "", small_font);
-							//console(screen, overlay, 8, "", small_font);
-						}
-						if((key.sym==SDLK_SEMICOLON) && !(key.mod & (KMOD_LSHIFT | KMOD_RSHIFT)))
-						{
-							showconsole=true;
-							console(screen, overlay, 8, "==DF Designer Colour Codes==", small_font);
-							colconsole(screen, overlay, 8, "# Rock", small_font, 128, 128, 128);
-							colconsole(screen, overlay, 8, "# Floor", small_font, 224, 224, 96);
-							colconsole(screen, overlay, 8, "# Door", small_font, 224, 112, 112);
-							colconsole(screen, overlay, 8, "# Stairs", small_font, 0, 112, 112);
-							colconsole(screen, overlay, 8, "# Water", small_font, 0, 0, 224);
-							colconsole(screen, overlay, 8, "# Grass", small_font, 96, 224, 96);
-							colconsole(screen, overlay, 8, "# Fortifications", small_font, 112, 224, 192);
-							//colconsole(screen, overlay, 8, "# ", small_font, );
-							//colconsole(screen, overlay, 8, "# ", small_font, );
-						}
-						/*
-						the ascii character is:
-						if ((key.unicode & 0xFF80) == 0)
-						{
-							// it's (char)keysym.unicode & 0x7F;
-						}
-						else
-						{
-							// it's not [low] ASCII
-						}
-						*/
-					}
-				break;
-				case SDL_KEYUP:
-					if(event.key.type==SDL_KEYUP)
-					{
-						SDL_keysym key=event.key.keysym;
-						if((key.sym==SDLK_r) || (key.sym==SDLK_w) || (key.sym==SDLK_f) || (key.sym==SDLK_g) || (key.sym==SDLK_t) || (key.sym==SDLK_d) || (key.sym==SDLK_o) || (key.sym==SDLK_b) || (key.sym==SDLK_c) || (key.sym==SDLK_a) || (key.sym==SDLK_p) || (key.sym==SDLK_u))
-							keyactive=false;
-						if(key.sym==SDLK_LEFT)
-							dview.x=max(dview.x, 0);
-						if(key.sym==SDLK_RIGHT)
-							dview.x=min(dview.x, 0);
-						if(key.sym==SDLK_UP)
-							dview.y=max(dview.y, 0);
-						if(key.sym==SDLK_DOWN)
-							dview.y=min(dview.y, 0);
-						if((key.sym==SDLK_LEFTBRACKET) || (key.sym==SDLK_RIGHTBRACKET))
-							dth=dph=0;
-					}
-				break;
-				case SDL_MOUSEMOTION:
-					mouse.x=event.motion.x;
-					mouse.y=event.motion.y;
-				break;
-				case SDL_MOUSEBUTTONDOWN:
-					mouse.x=event.button.x;
-					mouse.y=event.button.y;
-					button=event.button.button;
-					drag|=button;
-					SDL_Event makekey;
-					switch(button)
-					{
-						case SDL_BUTTON_LEFT:
-							// maparea 280, 8, 512, 512
-							// menuarea 300, 532, 480, 48
 							if((mouse.x>=280) && (mouse.x<792) && (mouse.y>=8) && (mouse.y<=520))
 							{
 								if(viewmode==0)
@@ -1764,7 +1558,180 @@ int main(int argc, char *argv[])
 									keyplace=false;
 								}
 							}
-							if((mouse.x>=300) && (mouse.x<780) && (mouse.y>=532) && (mouse.y<580))
+						}
+						if(key.sym==SDLK_h)
+						{
+							showconsole=true;
+							console(screen, overlay, 0, "==DF Designer Keystroke Help==", small_font);
+							console(screen, overlay, 0, "h    this Help", small_font);
+							console(screen, overlay, 0, ";     list colour codes", small_font);
+							console(screen, overlay, 0, "s    Save map", small_font);
+							console(screen, overlay, 0, "l     Load map", small_font);
+							console(screen, overlay, 0, "?    toggle console/minimap", small_font);
+							console(screen, overlay, 0, "< >  zslice up/down", small_font);
+							console(screen, overlay, 0, "z    zslice to groundlevel", small_font);
+							console(screen, overlay, 0, "cursors move viewport", small_font);
+							console(screen, overlay, 0, "- +  uslice up/down", small_font);
+							console(screen, overlay, 0, "r     dig/undig Rock", small_font);
+							console(screen, overlay, 0, "f     place/remove Floor", small_font);
+							console(screen, overlay, 0, "d    place/remove Door", small_font);
+							console(screen, overlay, 0, "g    place/remove Grass", small_font);
+							console(screen, overlay, 0, "w    place/remove Water", small_font);
+							console(screen, overlay, 0, "t     place/remove sTairs", small_font);
+							console(screen, overlay, 0, "o    place/remove fOrtifications", small_font);
+							console(screen, overlay, 0, "e    Edit mode", small_font);
+							console(screen, overlay, 0, "c     --COLOURS", small_font);
+							console(screen, overlay, 0, "x     --DF-TILES", small_font);
+							console(screen, overlay, 0, "i     Isometric mode", small_font);
+							console(screen, overlay, 0, "[]     Rotate horizontal", small_font);
+							console(screen, overlay, 0, "{}   Rotate vertical", small_font);
+							console(screen, overlay, 0, "v    Mode toggle", small_font);
+							//console(screen, overlay, 0, "", small_font);
+							//console(screen, overlay, 8, "", small_font);
+						}
+						if((key.sym==SDLK_SEMICOLON) && !(key.mod & (KMOD_LSHIFT | KMOD_RSHIFT)))
+						{
+							showconsole=true;
+							console(screen, overlay, 8, "==DF Designer Colour Codes==", small_font);
+							colconsole(screen, overlay, 8, "# Rock", small_font, 128, 128, 128);
+							colconsole(screen, overlay, 8, "# Floor", small_font, 224, 224, 96);
+							colconsole(screen, overlay, 8, "# Door", small_font, 224, 112, 112);
+							colconsole(screen, overlay, 8, "# Stairs", small_font, 0, 112, 112);
+							colconsole(screen, overlay, 8, "# Water", small_font, 0, 0, 224);
+							colconsole(screen, overlay, 8, "# Grass", small_font, 96, 224, 96);
+							colconsole(screen, overlay, 8, "# Fortifications", small_font, 112, 224, 192);
+							//colconsole(screen, overlay, 8, "# ", small_font, );
+						}
+						if ((key.unicode & 0xFF80) == 0) // shortcut keys
+						{
+							char what = (char)key.unicode & 0x7F;
+							int which = what-'0';
+							if((0<=which) && (which<nitems[menu]))
+							{
+								if(which)
+								{
+									if(menu)
+										mdo=which;
+									else
+										menu=which;
+								}
+								else
+								{
+									menu=0;
+								}
+							}
+							else if(what!=0)
+							{
+								int i,j;
+								for(i=0;i<nmenus;i++)
+								{
+									for(j=0;j<nitems[menu];j++)
+									{
+										if(menus[i][j].key==what)
+										{
+											menu=i;
+											mdo=j;
+											i=10;
+											j=10;
+										}
+									}
+								}
+							}
+						}
+					}
+				break;
+				case SDL_KEYUP:
+					if(event.key.type==SDL_KEYUP)
+					{
+						SDL_keysym key=event.key.keysym;
+						if((key.sym==SDLK_r) || (key.sym==SDLK_w) || (key.sym==SDLK_f) || (key.sym==SDLK_g) || (key.sym==SDLK_t) || (key.sym==SDLK_d) || (key.sym==SDLK_o) || (key.sym==SDLK_b) || (key.sym==SDLK_c) || (key.sym==SDLK_a) || (key.sym==SDLK_p) || (key.sym==SDLK_u) || (key.sym==SDLK_SPACE))
+							keyactive=false;
+						if(key.sym==SDLK_LEFT)
+							dview.x=max(dview.x, 0);
+						if(key.sym==SDLK_RIGHT)
+							dview.x=min(dview.x, 0);
+						if(key.sym==SDLK_UP)
+							dview.y=max(dview.y, 0);
+						if(key.sym==SDLK_DOWN)
+							dview.y=min(dview.y, 0);
+						if((key.sym==SDLK_LEFTBRACKET) || (key.sym==SDLK_RIGHTBRACKET))
+							dth=dph=0;
+					}
+				break;
+				case SDL_MOUSEMOTION:
+					mouse.x=event.motion.x;
+					mouse.y=event.motion.y;
+				break;
+				case SDL_MOUSEBUTTONDOWN:
+					mouse.x=event.button.x;
+					mouse.y=event.button.y;
+					button=event.button.button;
+					drag|=button;
+					SDL_Event makekey;
+					switch(button)
+					{
+						case SDL_BUTTON_LEFT:
+							// maparea 280, 8, 512, 512
+							// menuarea 300, 528, 480, 48
+							if((mouse.x>=280) && (mouse.x<792) && (mouse.y>=8) && (mouse.y<=520))
+							{
+								if(viewmode==0)
+								{
+									int x=view.x+(mouse.x-280)/8,
+										y=view.y+(mouse.y-8)/8;
+									if((x>=0) && (x<worldx) && (y>=0) && (y<worldy))
+									{
+										switch(lastkey)
+										{
+											case 'r':
+												keyplace=!(map[zslice][x][y].data & TILE_ROCK);
+												keyactive=true;
+											break;
+											case 'f':
+												keyplace=!(map[zslice][x][y].data & TILE_FLOOR);
+												keyactive=true;
+											break;
+											case 'd':
+												keyplace=!(map[zslice][x][y].data & TILE_DOOR);
+												keyactive=true;
+											break;
+											case 'g':
+												keyplace=!(map[zslice][x][y].data & TILE_GRASS);
+												keyactive=true;
+											break;
+											case 'w':
+												keyplace=!(map[zslice][x][y].data & TILE_WATER);
+												keyactive=true;
+											break;
+											case 't':
+												keyplace=!(map[zslice][x][y].data & TILE_STAIRS);
+												keyactive=true;
+											break;
+											case 'o':
+												keyplace=!(map[zslice][x][y].data & (TILE_FORTS|TILE_ROCK));
+												keyactive=true;
+											break;
+											case 'a':
+											case 'b':
+											case 'c':
+											case 'p':
+											case 'u':
+												keyplace=!(map[zslice][x][y].data & TILE_OBJECT);
+												keyactive=true;
+											break;
+											default:
+												keyplace=true;
+												keyactive=true;
+											break;
+										}
+									}
+								}
+								else
+								{
+									keyplace=false;
+								}
+							}
+							if((mouse.x>=300) && (mouse.x<780) && (mouse.y>=528) && (mouse.y<576))
 							{
 								int which=((mouse.x-252)/48)%10;
 								if(which<nitems[menu])
@@ -1864,7 +1831,7 @@ int main(int argc, char *argv[])
 							makekey.key.type=SDL_KEYUP;
 							makekey.key.keysym.sym=lastkey;
 							SDL_PushEvent(&makekey);
-							if((mouse.x>=300) && (mouse.x<780) && (mouse.y>=532) && (mouse.y<580))
+							if((mouse.x>=300) && (mouse.x<780) && (mouse.y>=528) && (mouse.y<576))
 							{
 								int which=((mouse.x-252)/48)%10;
 								if(which==msel)
@@ -2042,6 +2009,185 @@ int main(int argc, char *argv[])
 				break;
 				case 35:
 					lastkey='p';
+				break;
+				case 41: // Edit-mode
+					viewmode=0;
+					console(screen, overlay, 8, "Editing mode selected", small_font);
+					switch(editmode)
+					{
+						case 0:
+							console(screen, overlay, 8, "Edit-mode COLOURS selected", small_font);
+							if(semislice)
+								console(screen, overlay, 8, "shadowing OFF", small_font);
+							else
+								console(screen, overlay, 8, "shadowing ON", small_font);
+						break;
+						case 1:
+							console(screen, overlay, 8, "Edit-mode DF-TILES selected", small_font);
+						break;
+						default:
+							console(screen, overlay, 8, "Don't know what edit-mode this is... error!", small_font);
+						break;
+					}
+				break;
+				case 42: // Iso/3D-mode
+					viewmode=1;
+					console(screen, overlay, 8, "Isometric View mode selected", small_font);
+					if(semislice)
+						console(screen, overlay, 8, "semislice ON", small_font);
+					else
+						console(screen, overlay, 8, "semislice OFF", small_font);
+				break;
+				case 43: // Edit-Colours
+					editmode=0;
+					console(screen, overlay, 8, "Edit-mode COLOURS selected", small_font);
+					if(semislice)
+						console(screen, overlay, 8, "shadowing OFF", small_font);
+					else
+						console(screen, overlay, 8, "shadowing ON", small_font);
+				break;
+				case 44: // Edit-DFTILES
+					editmode=1;
+					console(screen, overlay, 8, "Edit-mode DF-TILES selected", small_font);
+				break;
+				case 45: // Toggle Console
+					showconsole=!showconsole;
+				break;
+				case 46: // Shadowing/Semislice
+					semislice=!semislice;
+					if(viewmode==1)
+					{
+						if(semislice)
+							console(screen, overlay, 8, "semislice ON", small_font);
+						else
+							console(screen, overlay, 8, "semislice OFF", small_font);
+					}
+					else
+					{
+						if(semislice)
+							console(screen, overlay, 8, "shadowing OFF", small_font);
+						else
+							console(screen, overlay, 8, "shadowing ON", small_font);
+					}
+				break;
+				case 52:
+				case 54:
+				{
+					bool copy=true;
+					bool shft=(mdo==4);
+					if(confirms)
+					{
+						char * boxtextlines[] = {"Copy from z-level below --", "are you sure?", "There is no undo!"};
+						if(shft)
+							boxtextlines[0]="Shift up one z-level --";
+						copy=ynbox(screen, box_small, boxtextlines, 3, small_button_u, small_button_p, small_font, big_font, "Yes, Do it!", "No, Stop!", 0, 24, 48, 96, 48, 96, 192);
+					}
+					if(copy)
+					{
+						colconsole(screen, overlay, 8, shft?"Shifting up one z-level...":"Copying from z-level below...", small_font, 96, 96, 96);
+						int x,y,z;
+						tile fill={TILE_ROCK,0};
+						for(z=shft?levels-2:zslice;z>=(shft?0:zslice);z--)
+						{
+							for(x=0;x<worldx;x++)
+							{
+								for(y=0;y<worldy;y++)
+								{
+									map[z][x][y]=(z==0)?fill:map[z-1][x][y]; // If there are ever pointers, we'll have to watch out for this :S
+								}
+							}
+						}
+						if(shft)
+							groundlevel++;
+						colconsole(screen, overlay, 20, "Done!", small_font, 32, 128, 32);
+					}
+					else
+					{
+						colconsole(screen, overlay, 20, "Z-level copy cancelled.", small_font, 128, 104, 32);
+					}
+				}
+				break;
+				case 51:
+				case 53:
+				{
+					bool copy=true;
+					bool shft=(mdo==3);
+					if(confirms)
+					{
+						char * boxtextlines[] = {"Copy from z-level above --", "are you sure?", "There is no undo!"};
+						if(shft)
+							boxtextlines[0]="Shift down one z-level --";
+						copy=ynbox(screen, box_small, boxtextlines, 3, small_button_u, small_button_p, small_font, big_font, "Yes, Do it!", "No, Stop!", 0, 24, 48, 96, 48, 96, 192);
+					}
+					if(copy)
+					{
+						colconsole(screen, overlay, 8, shft?"Shifting down one z-level...":"Copying from z-level above...", small_font, 96, 96, 96);
+						int x,y,z;
+						tile fill={0,0};
+						for(z=shft?1:zslice;z<(shft?levels:zslice+1);z++)
+						{
+							for(x=0;x<worldx;x++)
+							{
+								for(y=0;y<worldy;y++)
+								{
+									map[z][x][y]=(z==levels-1)?fill:map[z+1][x][y]; // If there are ever pointers, we'll have to watch out for this :S
+								}
+							}
+						}
+						if(shft)
+							groundlevel--;
+						colconsole(screen, overlay, 20, "Done!", small_font, 32, 128, 32);
+					}
+					else
+					{
+						colconsole(screen, overlay, 20, "Z-level copy cancelled.", small_font, 128, 104, 32);
+					}
+				}
+				break;
+				case 55: // Count Materials
+				{
+					console(screen, overlay, 8, "Counting materials...", small_font);
+					int walls=0,floors=0,doors=0,stairs=0,beds=0,chairs=0,tables=0,statues=0;
+					int x,y,z;
+					for(z=0;z<levels;z++)
+					{
+						for(y=0;y<worldy;y++)
+						{
+							for(x=0;x<worldx;x++)
+							{
+								int here=map[z][x][y].data;
+								if((z>=groundlevel) && (here & (TILE_ROCK|TILE_FORTS)))
+									walls++;
+								else if(here & TILE_FLOOR)
+									floors++;
+								else if(here & TILE_DOOR)
+									doors++;
+								else if(here & TILE_STAIRS)
+									stairs++;
+								if(here & TILE_OBJECT)
+								{
+									int object=map[z][x][y].object;
+									if(object==OBJECT_BED)
+										beds++;
+									else if(object==OBJECT_CHAIR)
+										chairs++;
+									else if(object==OBJECT_TABLE)
+										tables++;
+									else if(object==OBJECT_STATUE)
+										statues++;
+								}
+							}
+						}
+					}
+					char string[100];
+					sprintf(string, " %u walls, %u floors, %u doors, %u stairs", walls, floors, doors, stairs);
+					colconsole(screen, overlay, 8, string, small_font, 255, 255, 255);
+					sprintf(string, " %u beds, %u chairs, %u tables, %u statues", beds, chairs, tables, statues);
+					colconsole(screen, overlay, 8, string, small_font, 255, 255, 255);
+				}
+				break;
+				case 56: // Ground to Zslice
+					groundlevel=zslice;
 				break;
 				default:
 					fprintf(stderr, "Error - menuitem %d/%d undefined\n", menu, mdo);

@@ -11,8 +11,8 @@ ITEM:5:Misc
 MENU:1:7
 ITEM:0:Go Up
 ITEM:1:New
-ITEM:2:Load:L
-ITEM:3:Save:S
+ITEM:2:Load:l
+ITEM:3:Save:s
 ITEM:4:Export
 ITEM:5:QF-Export
 ITEM:6:Quit
@@ -38,10 +38,10 @@ ITEM:5:Stockpile
 
 MENU:4:7
 ITEM:0:Go Up
-ITEM:1:Edit:E
-ITEM:2:Iso/3D:I
-ITEM:3:Ed/Colours:C
-ITEM:4:Ed/DF-Tiles:X
+ITEM:1:Edit:e
+ITEM:2:Iso/3D:i
+ITEM:3:Ed/Colours:c
+ITEM:4:Ed/DF-Tiles:x
 ITEM:5:Console:?
 ITEM:6:Shadow
 
