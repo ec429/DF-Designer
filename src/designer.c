@@ -279,6 +279,10 @@ int main(int argc, char *argv[])
 										menus[i][j].key=*right;
 										right++;
 									}
+									else
+									{
+										menus[i][j].key=0;
+									}
 									menus[i][j].flags=0;
 									if(*right==':')
 									{

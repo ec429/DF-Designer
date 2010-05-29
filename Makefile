@@ -16,12 +16,15 @@ designer: $(BINDIR)designer
 	-ln $(BINDIR)designer designer --symbolic
 
 $(BINDIR)designer: $(SRCDIR)designer.c $(LIBDIR)draw.o $(INCDIR)draw.h $(LIBDIR)dialogs.o $(INCDIR)dialogs.h $(INCDIR)437.h
+	-mkdir $(BINDIR)
 	$(CC) $(CFLAGS) $(SDL) -o $(BINDIR)designer $(SRCDIR)designer.c $(LIBDIR)draw.o $(LIBDIR)dialogs.o -lm $(DGFX) $(DFONT)
 
 $(LIBDIR)draw.o: $(SRCDIR)draw.c $(INCDIR)draw.h
+	-mkdir $(LIBDIR)
 	$(CC) $(CFLAGS) $(SDL) -o $(LIBDIR)draw.o -c $(SRCDIR)draw.c $(DGFX)
 
 $(LIBDIR)dialogs.o: $(SRCDIR)dialogs.c $(INCDIR)dialogs.h
+	-mkdir $(LIBDIR)
 	$(CC) $(CFLAGS) $(SDL) -o $(LIBDIR)dialogs.o -c $(SRCDIR)dialogs.c
 
 dist: all
