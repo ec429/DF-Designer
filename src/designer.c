@@ -81,11 +81,13 @@ disp_tile wb={' ', 255, 255, 255, 0, 0, 0}, err={'!', 255, 0, 0, 0, 0, 192};
 
 bool showconsole=true;
 
-int console(SDL_Surface * screen, SDL_Surface * overlay, int delay, char * text, TTF_Font * font);
-int colconsole(SDL_Surface * screen, SDL_Surface * overlay, int delay, char * text, TTF_Font * font, char r, char g, char b);
-disp_tile tchar(tile ***map, int x, int y, int z, int worldx, int worldy, int groundlevel);
-int load_map(char *filename, tile ****map, gui guibits, int *worldx, int *worldy, int *levels, int *groundlevel, int *zslice, int *uslice, pos *view, pos *dview);
-int clear_map(tile ***map, bool alloc, int worldx, int worldy, int levels, int groundlevel);
+// TODO: bud these off into appropriate lib files
+int console(SDL_Surface * screen, SDL_Surface * overlay, int delay, char * text, TTF_Font * font); // draw
+int colconsole(SDL_Surface * screen, SDL_Surface * overlay, int delay, char * text, TTF_Font * font, char r, char g, char b); // draw
+disp_tile tchar(tile ***map, int x, int y, int z, int worldx, int worldy, int groundlevel); // map
+int load_map(char *filename, tile ****map, gui guibits, int *worldx, int *worldy, int *levels, int *groundlevel, int *zslice, int *uslice, pos *view, pos *dview); // map
+int clear_map(tile ***map, bool alloc, int worldx, int worldy, int levels, int groundlevel); // map
+char * getl(FILE *); // bits
 
 int main(int argc, char *argv[])
 {
@@ -192,7 +194,17 @@ int main(int argc, char *argv[])
 		return(1);
 	}
 	
-	/* TODO:read & parse init/menu (newgui text & shortcuts) */
+	FILE *mfp = fopen("init/menu", "r");
+	char ** mfile=NULL;int nlines=0;
+	while(!feof(mfp))
+	{
+		nlines++;
+		mfile=(char **)realloc(mfile, nlines*sizeof(char *));
+		mfile[nlines-1]=getl(mfp);
+	}
+	/* TODO: parse init/menu (newgui text & shortcuts) */
+	// with a state machine
+	// don't forget to free() the *mfiles
 	
 	/* read in the newgui images - first the 'base' ones, then try to open the art ones and if not, procedurally generate from the base ones & text */
 	SDL_Surface * menubase[6], * menubtn[6][10];
@@ -2473,4 +2485,38 @@ int clear_map(tile ***map, bool alloc, int worldx, int worldy, int levels, int g
 		}
 	}
 	return(0);
+}
+
+char * getl(FILE *fp)
+{
+	// gets a line of string data, {re}alloc()ing as it goes, so you don't need to make a buffer for it, nor must thee fret thyself about overruns!
+	char * lout = (char *)malloc(81);
+	int i=0;
+	signed int c;
+	while(!feof(fp))
+	{
+		c=fgetc(fp);
+		if((c==10)||(c==EOF))
+			break;
+		if(c!=0)
+		{
+			lout[i++]=c;
+			if((i%80)==0)
+			{
+				if((lout=(char *)realloc(lout, i+81))==NULL)
+				{
+					printf("\nNot enough memory to store input!\n");
+					free(lout);
+					return(NULL);
+				}
+			}
+		}
+	}
+	lout[i]=0;
+	char *nlout=(char *)realloc(lout, i+1);
+	if(nlout==NULL)
+	{
+		return(lout); // it doesn't really matter (assuming realloc is a decent implementation and hasn't nuked the original pointer), we'll just have to temporarily waste a bit of memory
+	}
+	return(nlout);
 }
