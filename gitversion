@@ -1,0 +1,16 @@
+#!/bin/bash
+
+VERSION=`git describe --tags`
+MAJOR=`echo $VERSION | grep -o "[[:digit:]]*\." | head -n 1 | head -c -2`
+MINOR=`echo $VERSION | grep -o "[[:digit:]]*\." | tail -n 1 | head -c -2`
+REVS=`echo $VERSION | grep -o "[[:digit:]]*-" | head -n 1 | head -c -2`
+GIT=`echo $VERSION | grep -o "\-.*" | tail -c +2`
+
+echo "//	designer - third party architectural design utility for 'Dwarf Fortress'
+//	Copyright (C) 2010 Edward Cree (see top of designer.c for license details)
+//   inc/version.h - contains version number
+#pragma once
+#define VERSION_MAJ	$MAJOR	// Major version
+#define VERSION_MIN	$MINOR	// Minor version
+#define VERSION_REV	$REVS	// Revision number; should be incremented before committing any source change which will affect binary behaviour
+#define VERSION_GIT	$GIT	// Rest of git describe" > inc/version.h

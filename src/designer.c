@@ -1,5 +1,3 @@
-/* Note on version numbering: whenever you commit a change to a source file, you should first increment 'VERSION_REV' on line 7 of version.h (so we can match up version numbers to commits) */
-
 /*
 	designer - third party architectural design utility for 'Dwarf Fortress'
 	Copyright (C) 2010 Edward Cree
@@ -191,7 +189,7 @@ int main(int argc, char *argv[])
 	cls.h-=20;
 	{
 		char vermsg[32];
-		sprintf(vermsg, "DF Designer %hhu.%hhu.%hhu", VERSION_MAJ, VERSION_MIN, VERSION_REV);
+		sprintf(vermsg, "DF Designer %hhu.%hhu.%hhu-%s", VERSION_MAJ, VERSION_MIN, VERSION_REV, VERSION_GIT);
 		console(screen, overlay, 20, vermsg, small_font);
 		fprintf(stderr, "%s\n", vermsg);
 	}
