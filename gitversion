@@ -4,11 +4,13 @@ VERSION=$(git describe --tags)
 read MAJOR MINOR REVS GIT <<< ${VERSION//[-.]/ }
 GIT=${GIT// /-}
 
-echo "//	designer - third party architectural design utility for 'Dwarf Fortress'
+cat >inc/version.h <<_EOM
+//	designer - third party architectural design utility for 'Dwarf Fortress'
 //	Copyright (C) 2010 Edward Cree (see top of designer.c for license details)
 //   inc/version.h - contains version number
 #pragma once
 #define VERSION_MAJ	$MAJOR	// Major version
 #define VERSION_MIN	$MINOR	// Minor version
 #define VERSION_REV	$REVS	// Revision number; should be incremented before committing any source change which will affect binary behaviour
-#define VERSION_GIT	\"$GIT\"	// Rest of git describe" > inc/version.h
+#define VERSION_GIT	"$GIT"	// Rest of git describe"
+_EOM
