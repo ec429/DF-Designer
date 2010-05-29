@@ -96,6 +96,8 @@ int console(SDL_Surface * screen, SDL_Surface * overlay, int delay, char * text,
 int colconsole(SDL_Surface * screen, SDL_Surface * overlay, int delay, char * text, TTF_Font * font, char r, char g, char b); // draw
 disp_tile tchar(tile ***map, int x, int y, int z, int worldx, int worldy, int groundlevel); // map
 int load_map(char *filename, tile ****map, gui guibits, int *worldx, int *worldy, int *levels, int *groundlevel, int *zslice, int *uslice, pos *view, pos *dview); // map
+int save_map(char *filename, tile ***map, gui guibits, int worldx, int worldy, int levels, int groundlevel); // map
+int export_map(char *filename, tile ***map, gui guibits, int worldx, int worldy, int levels, int groundlevel, bool qf); // map
 int clear_map(tile ***map, bool alloc, int worldx, int worldy, int levels, int groundlevel); // map
 char * getl(FILE *); // bits
 
@@ -342,7 +344,7 @@ int main(int argc, char *argv[])
 	/* read in the newgui images - first the 'base' ones, then try to open the art ones and if not, procedurally generate from the base ones & text */
 	SDL_Surface * menubase[nmenus], * menubtn[nmenus][10];
 	{
-		char * basename=strdup("img/menu/ / ");
+		char * basename=strdup("img/menu/ / .png");
 		int i,j;
 		for(i=0;i<nmenus;i++)
 		{
@@ -354,8 +356,8 @@ int main(int argc, char *argv[])
 			for(j=0;j<nitems[i];j++)
 			{
 				basename[11]=j+'0';
-				menubtn[i][j]=IMG_Load(basename);
-				if(!menubtn[i][j])
+				SDL_Surface * button=IMG_Load(basename);
+				if(!button)
 				{
 					menubtn[i][j]=SDL_CreateRGBSurface(SDL_SWSURFACE, 48, 48, OBPP, 0, 0, 0, 0);
 					SDL_BlitSurface(j?menubase[i]:menubase[0], NULL, menubtn[i][j], &cls);
@@ -369,7 +371,9 @@ int main(int argc, char *argv[])
 				}
 				else
 				{
-					SDL_Rect txtrect = {2, 36, 44, 8};
+					menubtn[i][j]=SDL_CreateRGBSurface(SDL_SWSURFACE, 48, 56, OBPP, 0, 0, 0, 0);
+					SDL_BlitSurface(button, NULL, menubtn[i][j], &cls);
+					SDL_Rect txtrect = {2, 46, 44, 10};
 					char *text=menus[i][j].text;
 					SDL_Color clrFg = {127, 127, 127, 0};
 					SDL_Surface *sText = TTF_RenderText_Solid(tiny_font, text, clrFg);
@@ -1296,17 +1300,6 @@ int main(int argc, char *argv[])
 					if(event.key.type==SDL_KEYDOWN)
 					{
 						SDL_keysym key=event.key.keysym;
-						if(key.sym==SDLK_q)
-						{
-							bool quit=true;
-							if(confirms)
-							{
-								char * boxtextlines[] = {"Are you sure you want to ***QUIT***?", "(Don't forget to save your work)"};
-								quit=ynbox(screen, box_small, boxtextlines, 2, small_button_u, small_button_p, small_font, small_font, "Yes, I'm Outta Here!", "No, Hold On!", 0, 24, 48, 96, 48, 96, 192);
-							}
-							if(quit)
-								errupt++;
-						}
 						if(key.sym==SDLK_0)
 						{
 							showconsole=!showconsole;
@@ -1397,365 +1390,6 @@ int main(int argc, char *argv[])
 								colconsole(screen, overlay, 20, "Z-level copy cancelled.", small_font, 128, 104, 32);
 							}
 						}
-						if((key.sym==SDLK_n) && (key.mod & KMOD_ALT))
-						{
-							bool clear=true;
-							if(confirms)
-							{
-								char * boxtextlines[] = {"Are you sure you want to clear the map?", "(This cannot be undone)"};
-								clear=ynbox(screen, box_small, boxtextlines, 2, small_button_u, small_button_p, small_font, small_font, "Yes, Go Ahead!", "No, Hold On!", 0, 24, 48, 96, 48, 96, 192);
-							}
-							if(clear)
-							{
-								int e=clear_map(map, false, worldx, worldy, levels, groundlevel);
-								if(e==2)
-									return(2);
-							}
-						}
-						if(key.sym==SDLK_l)
-						{
-							bool load=true;
-							if(confirms)
-							{
-								char * boxtextlines[] = {"Are you sure you want to load a map?", "(Don't forget to save your old map first)"};
-								load=ynbox(screen, box_small, boxtextlines, 2, small_button_u, small_button_p, small_font, small_font, "Yes, Go Ahead!", "No, Hold On!", 0, 24, 48, 96, 48, 96, 192);
-							}
-							if(load)
-							{
-								char * boxtextlines[] = {"Load Map:", "Enter a filename (max 28 chars)"};
-								char * filename = textentry(screen, box_small, boxtextlines, 2, small_font, 192, 224, 255);
-								if(*filename==0)
-								{
-									colconsole(screen, overlay, 20, "Load cancelled", small_font, 128, 104, 32);
-								}
-								else
-								{
-									int e=load_map(filename, &map, guibits, &worldx, &worldy, &levels, &groundlevel, &zslice, &uslice, &view, &dview);
-									if(e==2)
-										return(2);
-								}
-							}
-						}
-						if(key.sym==SDLK_s)
-						{
-							char * boxtextlines[] = {"Save Map:", "Enter a filename (max 28 chars)", "Blank to cancel"};
-							char * filename = textentry(screen, box_small, boxtextlines, 3, small_font, 192, 224, 255);
-							if(*filename==0)
-							{
-								colconsole(screen, overlay, 20, "Save cancelled", small_font, 128, 104, 32);
-							}
-							else
-							{
-								char string[100];
-								sprintf(string, "Saving to: %s...", filename);
-								fprintf(stderr, "%s\n", string);
-								console(screen, overlay, 20, string, small_font);
-								FILE * fp=fopen(filename, "w");
-								free(filename);
-								if(fp==NULL)
-								{
-									fprintf(stderr, "Couldn't open file for writing!\n");
-									perror("fopen");
-									colconsole(screen, overlay, 20, "Couldn't open file for writing!", small_font, 224, 192, 96);
-								}
-								else
-								{
-									fprintf(fp, "DFDM%c%c%c\n", VERSION_MAJ, VERSION_MIN, VERSION_REV);
-									fprintf(fp, "%u,%u,%u,%u\n", levels, worldx, worldy, groundlevel);
-									int x,y,z;
-									for(z=0;z<levels;z++)
-									{
-										for(y=0;y<worldy;y++)
-										{
-											for(x=0;x<worldx;x++)
-											{
-												fputc(map[z][x][y].data, fp);
-												fputc(map[z][x][y].object, fp);
-											}
-										}
-										fputc('\n', fp);
-									}
-									fclose(fp);
-									colconsole(screen, overlay, 20, "Saved successfully!", small_font, 96, 224, 96);
-								}
-							}
-						}
-						if(key.sym==SDLK_x)
-						{
-							char * boxtextlines[] = {"Export Design:", "Enter a filename (max 28 chars)", "Blank to cancel"};
-							char * filename = textentry(screen, box_small, boxtextlines, 3, small_font, 192, 224, 255);
-							if(*filename==0)
-							{
-								colconsole(screen, overlay, 20, "Export cancelled", small_font, 128, 104, 32);
-							}
-							else
-							{
-								char string[100];
-								sprintf(string, "Exporting to: %s...", filename);
-								fprintf(stderr, "%s\n", string);
-								console(screen, overlay, 20, string, small_font);
-								FILE * fp=fopen(filename, "w");
-								if(fp==NULL)
-								{
-									fprintf(stderr, "Couldn't open file for writing!\n");
-									perror("fopen");
-									colconsole(screen, overlay, 20, "Couldn't open file for writing!", small_font, 224, 192, 96);
-								}
-								else
-								{
-									fprintf(fp, "Generated by DF Designer %hhu.%hhu.%hhu\n", VERSION_MAJ, VERSION_MIN, VERSION_REV);
-									int x,y,z;
-									int nx=worldx,ny=worldy,nz=levels,mx=0,my=0,mz=0;
-									bool same[levels];
-									for(z=0;z<levels;z++)
-									{
-										if(z>0)
-										{
-											same[z]=true;
-											for(y=0;(y<worldy) && same[z];y++)
-											{
-												for(x=0;(x<worldx) && same[z];x++)
-												{
-													if(map[z][x][y].data!=map[z-1][x][y].data)
-														same[z]=false;
-													else if((map[z][x][y].data & TILE_OBJECT) && (map[z][x][y].object!=map[z-1][x][y].object))
-														same[z]=false;
-												}
-											}
-										}
-										else
-											same[z]=false;
-										for(y=0;y<worldy;y++)
-										{
-											for(x=0;x<worldx;x++)
-											{
-												int here=map[z][x][y].data;
-												if(z>groundlevel)
-												{
-													if(here!=0)
-													{
-														nx=min(nx, x);
-														ny=min(ny, y);
-														nz=min(nz, z);
-														mx=max(mx, x);
-														my=max(my, y);
-														mz=max(mz, z);
-													}
-												}
-												else if(z==groundlevel)
-												{
-													if(here&~TILE_GRASS)
-													{
-														nx=min(nx, x);
-														ny=min(ny, y);
-														nz=min(nz, z);
-														mx=max(mx, x);
-														my=max(my, y);
-														mz=max(mz, z);
-													}
-												}
-												else
-												{
-													if(here&~TILE_ROCK)
-													{
-														nx=min(nx, x);
-														ny=min(ny, y);
-														nz=min(nz, z);
-														mx=max(mx, x);
-														my=max(my, y);
-														mz=max(mz, z);
-													}
-												}
-											}
-										}
-									}
-									same[nz]=false; // we need to ensure that we at least get something
-									fputc('\n', fp);
-									for(z=mz;z>=nz;z--)
-									{
-										fprintf(fp, "Z-level %d\n", z-groundlevel);
-										if(!same[z])
-										{
-											for(y=ny;y<=my;y++)
-											{
-												fputc('\n', fp);
-												for(x=nx;x<=mx;x++)
-												{
-													disp_tile xtile = tchar(map, x, y, z, worldx, worldy, groundlevel);
-													if(xtile.v>127)
-														fprintf(fp, "%s", xatiles[xtile.v-128]);
-													else
-														fputc(xtile.v, fp);
-												}
-											}
-											fputc('\n', fp);
-											fputc('\n', fp);
-										}
-									}
-									fclose(fp);
-									colconsole(screen, overlay, 20, "Exported successfully!", small_font, 96, 32, 96);
-								}
-							}
-						}
-						if(key.sym==SDLK_y)
-						{
-							char * boxtextlines[] = {"Export Quickfort:", "Enter a filename (max 28 chars)", ".csv extension will be added", "automatically.  Blank to cancel"};
-							char * filename = textentry(screen, box_small, boxtextlines, 4, small_font, 192, 224, 255);
-							if(*filename==0)
-							{
-								colconsole(screen, overlay, 20, "Export cancelled", small_font, 128, 104, 32);
-							}
-							else
-							{
-								char csvfile[strlen(filename)+5];
-								sprintf(csvfile, "%s.csv", filename);
-								free(filename);
-								char string[100];
-								sprintf(string, "yxport: Exporting current zslice to: %s...", csvfile);
-								fprintf(stderr, "%s\n", string);
-								console(screen, overlay, 20, string, small_font);
-								FILE * fp=fopen(csvfile, "w");
-								if(fp==NULL)
-								{
-									fprintf(stderr, "yxport: Couldn't open file for writing!\n");
-									perror("fopen");
-									colconsole(screen, overlay, 20, "yxport: Couldn't open file for writing!", small_font, 224, 192, 96);
-								}
-								else
-								{
-									if(zslice>=groundlevel)
-										fprintf(fp, "#build Generated by DF Designer %hhu.%hhu.%hhu\n", VERSION_MAJ, VERSION_MIN, VERSION_REV);
-									else
-									{
-										colconsole(screen, overlay, 20, "yxport: Underground exports not done yet!  Sorry", small_font, 224, 160, 96);
-										fclose(fp);
-										goto qfstop;
-									}
-									int x,y;
-									int nx=worldx,ny=worldy,mx=0,my=0;
-									for(y=0;y<worldy;y++)
-									{
-										for(x=0;x<worldx;x++)
-										{
-											int here=map[zslice][x][y].data;
-											if(zslice>groundlevel)
-											{
-												if(here!=0)
-												{
-													nx=min(nx, x);
-													ny=min(ny, y);
-													mx=max(mx, x);
-													my=max(my, y);
-												}
-											}
-											else if(zslice==groundlevel)
-											{
-												if(here&~TILE_GRASS)
-												{
-													nx=min(nx, x);
-													ny=min(ny, y);
-													mx=max(mx, x);
-													my=max(my, y);
-												}
-											}
-											else // shouldn't come here because we haven't done underground yxport yet
-											{
-												if(here&~TILE_ROCK)
-												{
-													nx=min(nx, x);
-													ny=min(ny, y);
-													mx=max(mx, x);
-													my=max(my, y);
-												}
-											}
-										}
-									}
-									for(y=ny;y<=my;y++)
-									{
-										for(x=nx;x<=mx;x++)
-										{
-											int here=map[zslice][x][y].data;
-											char *qfbuild;
-											if(here&TILE_ROCK)
-											{
-												qfbuild="Cw";
-											}
-											else if(here&TILE_FLOOR)
-											{
-												qfbuild="Cf";
-											}
-											else if(here&TILE_DOOR)
-											{
-												qfbuild="d";
-											}
-											else if(here&TILE_STAIRS)
-											{
-												disp_tile xtile = tchar(map, x, y, zslice, worldx, worldy, groundlevel);
-												switch(xtile.v)
-												{
-													case '>':
-														qfbuild="Cd";
-													break;
-													case '<':
-														qfbuild="Cu";
-													break;
-													case 'X':
-														qfbuild="Cx";
-													break;
-													default:
-														fprintf(stderr, "yxport: A staircase could not be properly deduced\n");
-														colconsole(screen, overlay, 20, "yxport: A staircase could not be properly deduced", small_font, 160, 160, 128);
-														qfbuild="Cx";
-													break;
-												}
-											}
-											else if(here&TILE_FORTS)
-											{
-												qfbuild="CF";
-											}
-											else if(here&TILE_OBJECT)
-											{
-												switch(map[zslice][x][y].object)
-												{
-													case OBJECT_BED:
-														qfbuild="b";
-													break;
-													case OBJECT_CHAIR:
-														qfbuild="c";
-													break;
-													case OBJECT_TABLE:
-														qfbuild="t";
-													break;
-													case OBJECT_STATUE:
-														qfbuild="s";
-													break;
-													case OBJECT_STKPILE:
-														qfbuild="`";
-														fprintf(stderr, "yxport: stockpiles not yet supported (ignored)\n");
-														colconsole(screen, overlay, 20, "yxport: stockpiles not yet supported (ignored)", small_font, 160, 160, 128);
-													break;
-													default:
-														qfbuild="`";
-														fprintf(stderr, "yxport: unrecognised object %d (ignored)\n", map[zslice][x][y].object);
-														colconsole(screen, overlay, 20, "yxport: unrecognised object (ignored)", small_font, 160, 160, 128);
-													break;
-												}
-											}
-											else
-											{
-												qfbuild="`";
-											}
-											fprintf(fp, "%s,", qfbuild);
-										}
-										fprintf(fp, "#\n");
-									}
-									fclose(fp);
-									colconsole(screen, overlay, 20, "yxport: Exported successfully!", small_font, 96, 32, 96);
-								}
-								qfstop:
-								;
-							}
-						}
 						int x=view.x+(mouse.x-280)/8,
 							y=view.y+(mouse.y-8)/8;
 						if(key.sym==SDLK_r)
@@ -1770,19 +1404,6 @@ int main(int argc, char *argv[])
 								}
 							}
 							lastkey='r';
-						}
-						if(key.sym==SDLK_w)
-						{
-							if(viewmode==0)
-							{
-								if((x>=0) && (x<worldx) && (y>=0) && (y<worldy))
-								{
-									keyplace=!(map[zslice][x][y].data & TILE_WATER);
-									if(key.mod & (KMOD_LCTRL | KMOD_RCTRL))
-										keyactive=true;
-								}
-							}
-							lastkey='w';
 						}
 						if(key.sym==SDLK_f)
 						{
@@ -1835,84 +1456,6 @@ int main(int argc, char *argv[])
 								}
 							}
 							lastkey='d';
-						}
-						if(key.sym==SDLK_o)
-						{
-							if(viewmode==0)
-							{
-								if((x>=0) && (x<worldx) && (y>=0) && (y<worldy))
-								{
-									keyplace=!(map[zslice][x][y].data & TILE_FORTS);
-									if(key.mod & (KMOD_LCTRL | KMOD_RCTRL))
-										keyactive=true;
-								}
-							}
-							lastkey='o';
-						}
-						if(key.sym==SDLK_b)
-						{
-							if(viewmode==0)
-							{
-								if((x>=0) && (x<worldx) && (y>=0) && (y<worldy))
-								{
-									keyplace=!(map[zslice][x][y].data & TILE_OBJECT);
-									if(key.mod & (KMOD_LCTRL | KMOD_RCTRL))
-										keyactive=true;
-								}
-							}
-							lastkey='b';
-						}
-						if(key.sym==SDLK_c)
-						{
-							if(viewmode==0)
-							{
-								if((x>=0) && (x<worldx) && (y>=0) && (y<worldy))
-								{
-									keyplace=!(map[zslice][x][y].data & TILE_OBJECT);
-									if(key.mod & (KMOD_LCTRL | KMOD_RCTRL))
-										keyactive=true;
-								}
-							}
-							lastkey='c';
-						}
-						if(key.sym==SDLK_a)
-						{
-							if(viewmode==0)
-							{
-								if((x>=0) && (x<worldx) && (y>=0) && (y<worldy))
-								{
-									keyplace=!(map[zslice][x][y].data & TILE_OBJECT);
-									if(key.mod & (KMOD_LCTRL | KMOD_RCTRL))
-										keyactive=true;
-								}
-							}
-							lastkey='a';
-						}
-						if(key.sym==SDLK_u)
-						{
-							if(viewmode==0)
-							{
-								if((x>=0) && (x<worldx) && (y>=0) && (y<worldy))
-								{
-									keyplace=!(map[zslice][x][y].data & TILE_OBJECT);
-									if(key.mod & (KMOD_LCTRL | KMOD_RCTRL))
-										keyactive=true;
-								}
-							}
-							lastkey='u';
-						}
-						if(key.sym==SDLK_p)
-						{
-							if(viewmode==0)
-							{
-								if((x>=0) && (x<worldx) && (y>=0) && (y<worldy))
-								{
-									keyplace=!(map[zslice][x][y].data & TILE_OBJECT);
-									if(key.mod & (KMOD_LCTRL | KMOD_RCTRL))
-										keyactive=true;
-								}
-							}
-							lastkey='p';
 						}
 						if((key.sym==SDLK_GREATER) || (key.sym==SDLK_PERIOD))
 						{
@@ -2077,11 +1620,8 @@ int main(int argc, char *argv[])
 							console(screen, overlay, 0, "==DF Designer Keystroke Help==", small_font);
 							console(screen, overlay, 0, "h    this Help", small_font);
 							console(screen, overlay, 0, ";     list colour codes", small_font);
-							console(screen, overlay, 0, "q    Quit DF Designer", small_font);
 							console(screen, overlay, 0, "s    Save map", small_font);
 							console(screen, overlay, 0, "l     Load map", small_font);
-							console(screen, overlay, 0, "x    Export floor plan", small_font);
-							console(screen, overlay, 0, "y    Export Quickfort csv", small_font);
 							console(screen, overlay, 0, "0    toggle console/minimap", small_font);
 							console(screen, overlay, 0, "< >  zslice up/down", small_font);
 							console(screen, overlay, 0, "?     zslice to ground level", small_font);
@@ -2095,11 +1635,6 @@ int main(int argc, char *argv[])
 							console(screen, overlay, 0, "w    place/remove Water", small_font);
 							console(screen, overlay, 0, "t     place/remove sTairs", small_font);
 							console(screen, overlay, 0, "o    place/remove fOrtifications", small_font);
-							console(screen, overlay, 0, "a     place/remove tAble", small_font);
-							console(screen, overlay, 0, "b     place/remove Bed", small_font);
-							console(screen, overlay, 0, "c     place/remove Chair", small_font);
-							console(screen, overlay, 0, "p     place/remove stockPile", small_font);
-							console(screen, overlay, 0, "u     place/remove statUe", small_font);
 							console(screen, overlay, 0, "e    Edit mode", small_font);
 							console(screen, overlay, 0, ":       --COLOURS", small_font);
 							console(screen, overlay, 0, "@     --DF-TILES", small_font);
@@ -2169,16 +1704,67 @@ int main(int argc, char *argv[])
 					switch(button)
 					{
 						case SDL_BUTTON_LEFT:
-							// menuarea 300, 532, 480, 48
 							// maparea 280, 8, 512, 512
-							if((mouse.x>=280) && (mouse.x<792) && (mouse.y>=8) && (mouse.y<520))
+							// menuarea 300, 532, 480, 48
+							if((mouse.x>=280) && (mouse.x<792) && (mouse.y>=8) && (mouse.y<=520))
 							{
-								makekey.type=SDL_KEYDOWN;
-								makekey.key.type=SDL_KEYDOWN;
-								makekey.key.keysym.sym=lastkey;
-								SDL_PushEvent(&makekey);
+								if(viewmode==0)
+								{
+									int x=view.x+(mouse.x-280)/8,
+										y=view.y+(mouse.y-8)/8;
+									if((x>=0) && (x<worldx) && (y>=0) && (y<worldy))
+									{
+										switch(lastkey)
+										{
+											case 'r':
+												keyplace=!(map[zslice][x][y].data & TILE_ROCK);
+												keyactive=true;
+											break;
+											case 'f':
+												keyplace=!(map[zslice][x][y].data & TILE_FLOOR);
+												keyactive=true;
+											break;
+											case 'd':
+												keyplace=!(map[zslice][x][y].data & TILE_DOOR);
+												keyactive=true;
+											break;
+											case 'g':
+												keyplace=!(map[zslice][x][y].data & TILE_GRASS);
+												keyactive=true;
+											break;
+											case 'w':
+												keyplace=!(map[zslice][x][y].data & TILE_WATER);
+												keyactive=true;
+											break;
+											case 't':
+												keyplace=!(map[zslice][x][y].data & TILE_STAIRS);
+												keyactive=true;
+											break;
+											case 'o':
+												keyplace=!(map[zslice][x][y].data & (TILE_FORTS|TILE_ROCK));
+												keyactive=true;
+											break;
+											case 'a':
+											case 'b':
+											case 'c':
+											case 'p':
+											case 'u':
+												keyplace=!(map[zslice][x][y].data & TILE_OBJECT);
+												keyactive=true;
+											break;
+											default:
+												keyplace=true;
+												keyactive=true;
+											break;
+										}
+									}
+								}
+								else
+								{
+									keyplace=false;
+								}
 							}
-							else if((mouse.x>=300) && (mouse.x<780) && (mouse.y>=532) && (mouse.y<580))
+							if((mouse.x>=300) && (mouse.x<780) && (mouse.y>=532) && (mouse.y<580))
 							{
 								int which=((mouse.x-252)/48)%10;
 								if(which<nitems[menu])
@@ -2196,11 +1782,65 @@ int main(int argc, char *argv[])
 								lastx=mouse.x;
 								lasty=mouse.y;
 								lastview=view;
-								makekey.type=SDL_KEYDOWN;
-								makekey.key.type=SDL_KEYDOWN;
-								makekey.key.keysym.sym=lastkey;
-								SDL_PushEvent(&makekey);
 								colconsole(screen, overlay, 8, " Filling rectangle!", small_font, 192, 144, 96);
+								if((mouse.x>=280) && (mouse.x<792) && (mouse.y>=8) && (mouse.y<=520))
+								{
+									if(viewmode==0)
+									{
+										int x=view.x+(mouse.x-280)/8,
+											y=view.y+(mouse.y-8)/8;
+										if((x>=0) && (x<worldx) && (y>=0) && (y<worldy))
+										{
+											switch(lastkey)
+											{
+												case 'r':
+													keyplace=!(map[zslice][x][y].data & TILE_ROCK);
+													keyactive=true;
+												break;
+												case 'f':
+													keyplace=!(map[zslice][x][y].data & TILE_FLOOR);
+													keyactive=true;
+												break;
+												case 'd':
+													keyplace=!(map[zslice][x][y].data & TILE_DOOR);
+													keyactive=true;
+												break;
+												case 'g':
+													keyplace=!(map[zslice][x][y].data & TILE_GRASS);
+													keyactive=true;
+												break;
+												case 'w':
+													keyplace=!(map[zslice][x][y].data & TILE_WATER);
+													keyactive=true;
+												break;
+												case 't':
+													keyplace=!(map[zslice][x][y].data & TILE_STAIRS);
+													keyactive=true;
+												break;
+												case 'o':
+													keyplace=!(map[zslice][x][y].data & (TILE_FORTS|TILE_ROCK));
+													keyactive=true;
+												break;
+												case 'a':
+												case 'b':
+												case 'c':
+												case 'p':
+												case 'u':
+													keyplace=!(map[zslice][x][y].data & TILE_OBJECT);
+													keyactive=true;
+												break;
+												default:
+													keyplace=true;
+													keyactive=true;
+												break;
+											}
+										}
+									}
+									else
+									{
+										keyplace=false;
+									}
+								}
 							}
 							else
 								colconsole(screen, overlay, 8, " Filled rectangle.", small_font, 144, 224, 96);
@@ -2261,7 +1901,153 @@ int main(int argc, char *argv[])
 			}
 		}
 		
-		// TODO: switch() on mdo & menu if mdo!=-1
+		// Menu actions (incomplete)
+		if(mdo!=-1)
+		{
+			switch((10*menu)+mdo)
+			{
+				case 11: // New/clear
+				{
+					bool clear=true;
+					if(confirms)
+					{
+						char * boxtextlines[] = {"Are you sure you want to clear the map?", "(This cannot be undone)"};
+						clear=ynbox(screen, box_small, boxtextlines, 2, small_button_u, small_button_p, small_font, small_font, "Yes, Go Ahead!", "No, Hold On!", 0, 24, 48, 96, 48, 96, 192);
+					}
+					if(clear)
+					{
+						int e=clear_map(map, false, worldx, worldy, levels, groundlevel);
+						if(e==2)
+							return(2);
+					}
+				}
+				break;
+				case 12: // Load
+				{
+					bool load=true;
+					if(confirms)
+					{
+						char * boxtextlines[] = {"Are you sure you want to load a map?", "(Don't forget to save your old map first)"};
+						load=ynbox(screen, box_small, boxtextlines, 2, small_button_u, small_button_p, small_font, small_font, "Yes, Go Ahead!", "No, Hold On!", 0, 24, 48, 96, 48, 96, 192);
+					}
+					if(load)
+					{
+						char * boxtextlines[] = {"Load Map:", "Enter a filename (max 28 chars)"};
+						char * filename = textentry(screen, box_small, boxtextlines, 2, small_font, 192, 224, 255);
+						if(*filename==0)
+						{
+							colconsole(screen, overlay, 20, "Load cancelled", small_font, 128, 104, 32);
+						}
+						else
+						{
+							int e=load_map(filename, &map, guibits, &worldx, &worldy, &levels, &groundlevel, &zslice, &uslice, &view, &dview);
+							if(e==2)
+								return(2);
+						}
+						free(filename);
+					}
+				}
+				break;
+				case 13: // Save
+				{
+					char * boxtextlines[] = {"Save Map:", "Enter a filename (max 28 chars)", "Blank to cancel"};
+					char * filename = textentry(screen, box_small, boxtextlines, 3, small_font, 192, 224, 255);
+					if(*filename==0)
+					{
+						colconsole(screen, overlay, 20, "Save cancelled", small_font, 128, 104, 32);
+					}
+					else
+					{
+						save_map(filename, map, guibits, worldx, worldy, levels, groundlevel);
+					}
+					free(filename);
+				}
+				break;
+				case 14: // Export
+				{
+					char * boxtextlines[] = {"Export Design:", "Enter a filename (max 28 chars)", "Blank to cancel"};
+					char * filename = textentry(screen, box_small, boxtextlines, 3, small_font, 192, 224, 255);
+					if(*filename==0)
+					{
+						colconsole(screen, overlay, 20, "Export cancelled", small_font, 128, 104, 32);
+					}
+					else
+					{
+						export_map(filename, map, guibits, worldx, worldy, levels, groundlevel, false);
+					}
+					free(filename);
+				}
+				break;
+				case 15: // QF-Export
+				{
+					char * boxtextlines[] = {"Export Quickfort:", "Enter a filename (max 28 chars)", ".csv extension will be added", "automatically.  Blank to cancel"};
+					char * filename = textentry(screen, box_small, boxtextlines, 4, small_font, 192, 224, 255);
+					if(*filename==0)
+					{
+						colconsole(screen, overlay, 20, "Export cancelled", small_font, 128, 104, 32);
+					}
+					else
+					{
+						char csvfile[strlen(filename)+5];
+						sprintf(csvfile, "%s.csv", filename);
+						free(filename);
+						export_map(csvfile, map, guibits, worldx, worldy, zslice, groundlevel, true);
+					}
+				}
+				break;
+				case 16: // Quit
+				{
+					bool quit=true;
+					if(confirms)
+					{
+						char * boxtextlines[] = {"Are you sure you want to ***QUIT***?", "(Don't forget to save your work)"};
+						quit=ynbox(screen, box_small, boxtextlines, 2, small_button_u, small_button_p, small_font, small_font, "Yes, I'm Outta Here!", "No, Hold On!", 0, 24, 48, 96, 48, 96, 192);
+					}
+					if(quit)
+						errupt++;
+				}
+				break;
+				case 21:
+					lastkey='r';
+				break;
+				case 22:
+					lastkey='f';
+				break;
+				case 23:
+					lastkey='d';
+				break;
+				case 24:
+					lastkey='g';
+				break;
+				case 25:
+					lastkey='w';
+				break;
+				case 26:
+					lastkey='t';
+				break;
+				case 27:
+					lastkey='o';
+				break;
+				case 31:
+					lastkey='a';
+				break;
+				case 32:
+					lastkey='b';
+				break;
+				case 33:
+					lastkey='c';
+				break;
+				case 34:
+					lastkey='u';
+				break;
+				case 35:
+					lastkey='p';
+				break;
+				default:
+					fprintf(stderr, "Error - menuitem %d/%d undefined\n", menu, mdo);
+				break;
+			}
+		}
 		
 		mdo=-1;
 		view.x=max(min(view.x+dview.x, worldx-1), 0);
@@ -2654,6 +2440,266 @@ int load_map(char *filename, tile ****map, gui guibits, int *worldx, int *worldy
 		}
 	}
 	return(1);
+}
+
+int save_map(char *filename, tile ***map, gui guibits, int worldx, int worldy, int levels, int groundlevel)
+{
+	char string[100];
+	sprintf(string, "Saving to: %s...", filename);
+	fprintf(stderr, "%s\n", string);
+	console(guibits.screen, guibits.overlay, 20, string, guibits.small_font);
+	FILE * fp=fopen(filename, "w");
+	if(fp==NULL)
+	{
+		fprintf(stderr, "Couldn't open file for writing!\n");
+		perror("fopen");
+		colconsole(guibits.screen, guibits.overlay, 20, "Couldn't open file for writing!", guibits.small_font, 224, 192, 96);
+		return(2);
+	}
+	else
+	{
+		fprintf(fp, "DFDM%c%c%c\n", VERSION_MAJ, VERSION_MIN, VERSION_REV);
+		fprintf(fp, "%u,%u,%u,%u\n", levels, worldx, worldy, groundlevel);
+		int x,y,z;
+		for(z=0;z<levels;z++)
+		{
+			for(y=0;y<worldy;y++)
+			{
+				for(x=0;x<worldx;x++)
+				{
+					fputc(map[z][x][y].data, fp);
+					fputc(map[z][x][y].object, fp);
+				}
+			}
+			fputc('\n', fp);
+		}
+		fclose(fp);
+		colconsole(guibits.screen, guibits.overlay, 20, "Saved successfully!", guibits.small_font, 96, 224, 96);
+	}
+	return(0);
+}
+
+int export_map(char *filename, tile ***map, gui guibits, int worldx, int worldy, int levels, int groundlevel, bool qf)
+{
+	int zslice=levels; // if qf==true then we store zslice in levels else we don't need zslice
+	char string[100];
+	if(qf)
+		sprintf(string, "yxport: Exporting current zslice to: %s...", filename);
+	else
+		sprintf(string, "Exporting to: %s...", filename);
+	fprintf(stderr, "%s\n", string);
+	console(guibits.screen, guibits.overlay, 20, string, guibits.small_font);
+	FILE * fp=fopen(filename, "w");
+	if(fp==NULL)
+	{
+		fprintf(stderr, "Couldn't open file for writing!\n");
+		perror("fopen");
+		colconsole(guibits.screen, guibits.overlay, 20, "Couldn't open file for writing!", guibits.small_font, 224, 192, 96);
+		return(2);
+	}
+	else
+	{
+		if(qf)
+		{
+			if(zslice>=groundlevel)
+				fprintf(fp, "#build Generated by DF Designer %hhu.%hhu.%hhu\n", VERSION_MAJ, VERSION_MIN, VERSION_REV);
+			else
+			{
+				colconsole(guibits.screen, guibits.overlay, 20, "yxport: Underground exports not done yet!  Sorry", guibits.small_font, 224, 160, 96);
+				fclose(fp);
+				return(4);
+			}
+		}
+		else
+			fprintf(fp, "Generated by DF Designer %hhu.%hhu.%hhu\n", VERSION_MAJ, VERSION_MIN, VERSION_REV);
+		int x,y,z;
+		int nx=worldx,ny=worldy,nz=levels,mx=0,my=0,mz=0;
+		bool same[levels];
+		for(z=qf?zslice:0;qf?z<levels:z==zslice;z++)
+		{
+			if((!qf) && (z>0))
+			{
+				same[z]=true;
+				for(y=0;(y<worldy) && same[z];y++)
+				{
+					for(x=0;(x<worldx) && same[z];x++)
+					{
+						if(map[z][x][y].data!=map[z-1][x][y].data)
+							same[z]=false;
+						else if((map[z][x][y].data & TILE_OBJECT) && (map[z][x][y].object!=map[z-1][x][y].object))
+							same[z]=false;
+					}
+				}
+			}
+			else
+				same[z]=false;
+			for(y=0;y<worldy;y++)
+			{
+				for(x=0;x<worldx;x++)
+				{
+					int here=map[z][x][y].data;
+					if(z>groundlevel)
+					{
+						if(here!=0)
+						{
+							nx=min(nx, x);
+							ny=min(ny, y);
+							nz=min(nz, z);
+							mx=max(mx, x);
+							my=max(my, y);
+							mz=max(mz, z);
+						}
+					}
+					else if(z==groundlevel)
+					{
+						if(here&~TILE_GRASS)
+						{
+							nx=min(nx, x);
+							ny=min(ny, y);
+							nz=min(nz, z);
+							mx=max(mx, x);
+							my=max(my, y);
+							mz=max(mz, z);
+						}
+					}
+					else
+					{
+						if(here&~TILE_ROCK)
+						{
+							nx=min(nx, x);
+							ny=min(ny, y);
+							nz=min(nz, z);
+							mx=max(mx, x);
+							my=max(my, y);
+							mz=max(mz, z);
+						}
+					}
+				}
+			}
+		}
+		if(qf)
+			nz=mz=zslice;
+		same[nz]=false; // we need to ensure that we at least get something
+		if(!qf)
+			fputc('\n', fp);
+		bool hitstock=false;
+		for(z=mz;z>=nz;z--)
+		{
+			if(!qf)
+				fprintf(fp, "Z-level %d\n", z-groundlevel);
+			if(!same[z])
+			{
+				for(y=ny;y<=my;y++)
+				{
+					if(!qf)
+						fputc('\n', fp);
+					for(x=nx;x<=mx;x++)
+					{
+						if(qf)
+						{
+							int here=map[zslice][x][y].data;
+							char *qfbuild;
+							if(here&TILE_ROCK)
+							{
+								qfbuild="Cw";
+							}
+							else if(here&TILE_FLOOR)
+							{
+								qfbuild="Cf";
+							}
+							else if(here&TILE_DOOR)
+							{
+								qfbuild="d";
+							}
+							else if(here&TILE_STAIRS)
+							{
+								disp_tile xtile = tchar(map, x, y, zslice, worldx, worldy, groundlevel);
+								switch(xtile.v)
+								{
+									case '>':
+										qfbuild="Cd";
+									break;
+									case '<':
+										qfbuild="Cu";
+									break;
+									case 'X':
+										qfbuild="Cx";
+									break;
+									default:
+										fprintf(stderr, "yxport: A staircase could not be properly deduced\n");
+										colconsole(guibits.screen, guibits.overlay, 20, "yxport: A staircase could not be properly deduced", guibits.small_font, 160, 160, 128);
+										qfbuild="Cx";
+									break;
+								}
+							}
+							else if(here&TILE_FORTS)
+							{
+								qfbuild="CF";
+							}
+							else if(here&TILE_OBJECT)
+							{
+								switch(map[zslice][x][y].object)
+								{
+									case OBJECT_BED:
+										qfbuild="b";
+									break;
+									case OBJECT_CHAIR:
+										qfbuild="c";
+									break;
+									case OBJECT_TABLE:
+										qfbuild="t";
+									break;
+									case OBJECT_STATUE:
+										qfbuild="s";
+									break;
+									case OBJECT_STKPILE:
+										qfbuild="`";
+										if(!hitstock)
+										{
+											fprintf(stderr, "yxport: stockpiles not yet supported (ignored)\n");
+											colconsole(guibits.screen, guibits.overlay, 20, "yxport: stockpiles not yet supported (ignored)", guibits.small_font, 160, 160, 128);
+										}
+										hitstock=true;
+									break;
+									default:
+										qfbuild="`";
+										fprintf(stderr, "yxport: unrecognised object %d (ignored)\n", map[zslice][x][y].object);
+										colconsole(guibits.screen, guibits.overlay, 20, "yxport: unrecognised object (ignored)", guibits.small_font, 160, 160, 128);
+									break;
+								}
+							}
+							else
+							{
+								qfbuild="`";
+							}
+							fprintf(fp, "%s,", qfbuild);
+						}
+						else
+						{
+							disp_tile xtile = tchar(map, x, y, z, worldx, worldy, groundlevel);
+							if(xtile.v>127)
+								fprintf(fp, "%s", xatiles[xtile.v-128]);
+							else
+								fputc(xtile.v, fp);
+						}
+					}
+					if(qf)
+						fprintf(fp, "#\n");
+				}
+				if(!qf)
+				{
+					fputc('\n', fp);
+					fputc('\n', fp);
+				}
+			}
+		}
+		fclose(fp);
+		if(qf)
+			colconsole(guibits.screen, guibits.overlay, 20, "yxport: Exported successfully!", guibits.small_font, 96, 32, 96);
+		else
+			colconsole(guibits.screen, guibits.overlay, 20, "Exported successfully!", guibits.small_font, 96, 32, 96);
+	}
+	return(0);
 }
 
 int clear_map(tile ***map, bool alloc, int worldx, int worldy, int levels, int groundlevel)

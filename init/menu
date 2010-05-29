@@ -18,13 +18,14 @@ ITEM:5:QF-Export
 ITEM:6:Quit
 
 MENU:2:8
+# In menu-2 the key shortcuts are done explicitly, since there's special stuff with Ctrl-key
 ITEM:0:Go Up
-ITEM:1:Rock:R
-ITEM:2:Floor:F
-ITEM:3:Door:D
-ITEM:4:Grass:G
+ITEM:1:Rock
+ITEM:2:Floor
+ITEM:3:Door
+ITEM:4:Grass
 ITEM:5:Water
-ITEM:6:Stairs:T
+ITEM:6:Stairs
 ITEM:7:Forts
 
 MENU:3:6
