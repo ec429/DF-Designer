@@ -15,7 +15,7 @@ all: $(BINDIR)designer
 designer: $(BINDIR)designer
 	-ln $(BINDIR)designer designer --symbolic
 
-$(BINDIR)designer: $(SRCDIR)designer.c $(LIBDIR)draw.o $(INCDIR)draw.h $(LIBDIR)dialogs.o $(INCDIR)dialogs.h $(INCDIR)437.h
+$(BINDIR)designer: $(SRCDIR)designer.c $(LIBDIR)draw.o $(INCDIR)draw.h $(LIBDIR)dialogs.o $(INCDIR)dialogs.h $(INCDIR)437.h $(INCDIR)version.h
 	-mkdir $(BINDIR)
 	$(CC) $(CFLAGS) $(SDL) -o $(BINDIR)designer $(SRCDIR)designer.c $(LIBDIR)draw.o $(LIBDIR)dialogs.o -lm $(DGFX) $(DFONT)
 
