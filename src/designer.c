@@ -2422,7 +2422,7 @@ int load_map(char *filename, tile ****map, gui guibits, int *worldx, int *worldy
 					fscanf(fp, "%u,%u,%u,%u\n", levels, worldx, worldy, groundlevel);
 				else
 					fscanf(fp, "%u,%u,%u\n", levels, worldx, worldy);
-				*uslice=*groundlevel-1;
+				*uslice=max(*groundlevel-1, 0);
 				(*map) = (tile ***)realloc((*map), *levels*sizeof(tile **));
 				if((*map)==NULL)
 				{
