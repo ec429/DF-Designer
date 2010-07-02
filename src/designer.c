@@ -189,7 +189,7 @@ int main(int argc, char *argv[])
 	cls.h-=20;
 	{
 		char vermsg[32];
-		sprintf(vermsg, "DF Designer %hhu.%hhu.%hhu-%s", VERSION_MAJ, VERSION_MIN, VERSION_REV, VERSION_GIT);
+		sprintf(vermsg, "DF Designer %hhu.%hhu.%hhu%s%s", VERSION_MAJ, VERSION_MIN, VERSION_REV, VERSION_GIT[0]?"-":"", VERSION_GIT);
 		console(screen, overlay, 20, vermsg, small_font);
 		fprintf(stderr, "%s\n", vermsg);
 	}
