@@ -1346,15 +1346,15 @@ int main(int argc, char *argv[])
 			if(fabs(posy-ctry)>10) ctry=(posy>ctry?ctry+20:ctry-20);
 			if(fabs(posx-ctrx)>100) ctrx=(posx>ctrx?ctrx+200:ctrx-200);
 			if(fabs(posy-ctry)>100) ctry=(posy>ctry?ctry+200:ctry-200);
-			dcounter(guibits, 400, 584, ctrx+.001, 'X');
-			dcounter(guibits, 400, 600, ctry+.001, 'Y');
+			dcounter(guibits, 400, 584, max(ctrx+.001, 0), 'X');
+			dcounter(guibits, 400, 600, max(ctry+.001, 0), 'Y');
 		}
 		else
 		{
 			SDL_Rect ctr={400, 584, 64, 32};
 			SDL_FillRect(screen, &ctr, SDL_MapRGB(screen->format, 0, 0, 0));
 		}
-		dcounter(guibits, 400, 616, zslice+.001, 'Z');
+		dcounter(guibits, 400, 616, max(zslice+.001, 0), 'Z');
 		
 		// apply console overlay
 		if(showconsole)
