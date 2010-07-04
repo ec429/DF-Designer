@@ -141,6 +141,22 @@ int dmenu(SDL_Surface * screen, int x, int y, int items, int pressed, int hover,
 	return(0);
 }
 
+int dcounter(gui guibits, int x, int y, double val, char what)
+{
+	int i;
+	for(i=0;i<3;i++)
+	{
+		double num=val*exp10(i-2);
+		num=floor(num)-10*floor(num/10);
+		SDL_Rect numeral={0, num*16, 16, 16};
+		SDL_Rect dest={x+(i*16), y, 16, 16};
+		SDL_BlitSurface(guibits.counter, &numeral, guibits.screen, &dest);
+	}
+	char text[2]={what, 0};
+	dtext(guibits.screen, x+50, y, text, guibits.small_font, 160, 160, 160);
+	return(0);
+}
+
 cparms cuboid(int dx, int dy, int dz, double theta, double phi)
 {
 	cparms rv;

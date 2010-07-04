@@ -56,14 +56,6 @@
 
 typedef struct
 {
-	SDL_Surface * screen, * overlay;
-	TTF_Font * small_font, * big_font;
-	SDL_Surface * small_button_u, * small_button_p, * box_small;
-}
-gui;
-
-typedef struct
-{
 	char *text;
 	char key;
 	char flags;
@@ -337,7 +329,8 @@ int main(int argc, char *argv[])
 	SDL_Surface * small_button_u = IMG_Load("img/small_button_u.png");
 	SDL_Surface * small_button_p = IMG_Load("img/small_button_p.png");
 	SDL_Surface * box_small = IMG_Load("img/box.png");
-	if(!small_button_u || !small_button_p || !box_small)
+	SDL_Surface * counter = IMG_Load("img/counter.png");
+	if(!small_button_u || !small_button_p || !box_small || !counter)
 	{
 		imgfail:
 		fprintf(stderr, "Failed to read images!\n");
@@ -447,6 +440,7 @@ int main(int argc, char *argv[])
 	char lastkey='r';
 	int lastx,lasty;
 	int lastr=0;
+	double ctrx=0, ctry=0;
 	pos lastview;
 	cls.x=0;
 	cls.y=0;
@@ -465,6 +459,7 @@ int main(int argc, char *argv[])
 	guibits.small_button_u=small_button_u;
 	guibits.small_button_p=small_button_p;
 	guibits.box_small=box_small;
+	guibits.counter=counter;
 	
 	if(lfn!=NULL)
 	{
@@ -1338,6 +1333,29 @@ int main(int argc, char *argv[])
 			SDL_BlitSurface(menubtn[tooli][toolj], NULL, screen, &loc);
 		}
 		
+		// indicate current co-ordinates
+		int posx=((mouse.x-280)/8)+view.x;
+		int posy=((mouse.y-8)/8)+view.y;
+		if((viewmode==0) && (mouse.x>=280) && (mouse.y>=8) && (mouse.x<792) && (mouse.y<520))
+		{
+			if(fabs(posx-ctrx)>.1) ctrx=(posx>ctrx?ctrx+.2:ctrx-.2);
+			if(fabs(posy-ctry)>.1) ctry=(posy>ctry?ctry+.2:ctry-.2);
+			if(fabs(posx-ctrx)>1) ctrx=(posx>ctrx?ctrx+2:ctrx-2);
+			if(fabs(posy-ctry)>1) ctry=(posy>ctry?ctry+2:ctry-2);
+			if(fabs(posx-ctrx)>10) ctrx=(posx>ctrx?ctrx+20:ctrx-20);
+			if(fabs(posy-ctry)>10) ctry=(posy>ctry?ctry+20:ctry-20);
+			if(fabs(posx-ctrx)>100) ctrx=(posx>ctrx?ctrx+200:ctrx-200);
+			if(fabs(posy-ctry)>100) ctry=(posy>ctry?ctry+200:ctry-200);
+			dcounter(guibits, 400, 584, ctrx+.001, 'X');
+			dcounter(guibits, 400, 600, ctry+.001, 'Y');
+		}
+		else
+		{
+			SDL_Rect ctr={400, 584, 64, 32};
+			SDL_FillRect(screen, &ctr, SDL_MapRGB(screen->format, 0, 0, 0));
+		}
+		dcounter(guibits, 400, 616, zslice+.001, 'Z');
+		
 		// apply console overlay
 		if(showconsole)
 			SDL_BlitSurface(overlay, NULL, screen, &over);
@@ -1443,16 +1461,10 @@ int main(int argc, char *argv[])
 						{
 							zslice=max(zslice-1, 0);
 							uslice=min(uslice, zslice);
-							char string[16];
-							sprintf(string, "zslice %u", zslice);
-							console(screen, overlay, 8, string, small_font);
 						}
 						if((key.sym==SDLK_LESS) || (key.sym==SDLK_COMMA))
 						{
 							zslice=min(zslice+1, levels-1);
-							char string[16];
-							sprintf(string, "zslice %u", zslice);
-							console(screen, overlay, 8, string, small_font);
 						}
 						if(key.sym==SDLK_RIGHTBRACKET)
 						{
@@ -1485,9 +1497,6 @@ int main(int argc, char *argv[])
 						if(key.sym==SDLK_z)
 						{
 							zslice=groundlevel;
-							char zmsg[16];
-							sprintf(zmsg, "zslice %u", zslice);
-							console(screen, overlay, 8, zmsg, small_font);
 						}
 						if(key.sym==SDLK_v)
 						{
