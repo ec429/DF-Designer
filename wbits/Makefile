@@ -5,20 +5,26 @@ BINDIR = bin/
 SRCDIR = src/
 INCDIR = inc/
 LIBDIR = lib/
+FNTDIR = font/
+IMGDIR = img/
+INITDIR = init/
 DGFX = -DOSIZ_X=800 -DOSIZ_Y=640 -DOBPP=32
-DFONT = -DFONT_FILE=\"font/Vera.ttf\"
+DFONT = -DFONT_FILE=\"$(FNTDIR)Vera.ttf\"
 
-all: designer.exe
+all: $(BINDIR)designer.exe
 
-designer.exe: $(BINDIR)designer.exe
-	cp $(BINDIR)designer.exe designer.exe
+$(INCDIR)version.h: $(SRCDIR)designer.c $(SRCDIR)draw.c $(INCDIR)draw.h $(SRCDIR)dialogs.c $(INCDIR)dialogs.h $(INCDIR)437.h
+	bash ./gitversion
 
-$(BINDIR)designer.exe: $(SRCDIR)designer.c $(LIBDIR)draw.dll $(INCDIR)draw.h $(LIBDIR)dialogs.dll $(INCDIR)dialogs.h $(INCDIR)437.h
-	$(CC) $(CFLAGS) -o $(BINDIR)designer.exe $(SRCDIR)designer.c $(LIBDIR)draw.dll $(LIBDIR)dialogs.dll -lm $(DGFX) $(DFONT) $(SDL)
+$(BINDIR)designer.exe: $(SRCDIR)designer.c $(LIBDIR)draw.dll $(INCDIR)draw.h $(LIBDIR)dialogs.dll $(INCDIR)dialogs.h $(INCDIR)437.h $(INCDIR)version.h
+	-mkdir $(BINDIR)
+	$(CC) $(CFLAGS) $(SDL) -o $(BINDIR)designer.exe $(SRCDIR)designer.c $(LIBDIR)draw.dll $(LIBDIR)dialogs.dll -lm $(DGFX) $(DFONT)
 
 $(LIBDIR)draw.dll: $(SRCDIR)draw.c $(INCDIR)draw.h
-	$(CC) $(CFLAGS) -o $(LIBDIR)draw.dll -c $(SRCDIR)draw.c $(DGFX) $(SDL)
+	-mkdir $(LIBDIR)
+	$(CC) $(CFLAGS) $(SDL) -o $(LIBDIR)draw.dll -c $(SRCDIR)draw.c $(DGFX)
 
 $(LIBDIR)dialogs.dll: $(SRCDIR)dialogs.c $(INCDIR)dialogs.h
-	$(CC) $(CFLAGS) -o $(LIBDIR)dialogs.dll -c $(SRCDIR)dialogs.c $(SDL)
+	-mkdir $(LIBDIR)
+	$(CC) $(CFLAGS) $(SDL) -o $(LIBDIR)dialogs.dll -c $(SRCDIR)dialogs.c
 

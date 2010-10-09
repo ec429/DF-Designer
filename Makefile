@@ -10,6 +10,7 @@ IMGDIR = img/
 INITDIR = init/
 DGFX = -DOSIZ_X=800 -DOSIZ_Y=640 -DOBPP=32
 DFONT = -DFONT_FILE=\"$(FNTDIR)Vera.ttf\"
+VERSION := `git describe --tags`
 
 all: designer $(BINDIR)designer
 
