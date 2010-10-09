@@ -1,0 +1,56 @@
+# File contains the menu texts, for use when button art is missing; also defines the key shortcuts for menu items
+
+MENU:0:6
+ITEM:0:Go Up::DISABLED
+ITEM:1:File
+ITEM:2:Tools
+ITEM:3:Objects
+ITEM:4:View
+ITEM:5:Misc
+
+MENU:1:7
+ITEM:0:Go Up
+ITEM:1:New
+ITEM:2:Load:l
+ITEM:3:Save:s
+ITEM:4:Export
+ITEM:5:QF-Export
+ITEM:6:Quit
+
+MENU:2:8
+# In menu-2 the key shortcuts are done explicitly, since there's special stuff with Ctrl-key
+ITEM:0:Go Up
+ITEM:1:Rock
+ITEM:2:Floor
+ITEM:3:Door
+ITEM:4:Grass
+ITEM:5:Water
+ITEM:6:Stairs
+ITEM:7:Forts
+
+MENU:3:6
+ITEM:0:Go Up
+ITEM:1:Table
+ITEM:2:Bed
+ITEM:3:Chair
+ITEM:4:Statue
+ITEM:5:Stockpile
+
+MENU:4:7
+ITEM:0:Go Up
+ITEM:1:Edit:e
+ITEM:2:Iso/3D:i
+ITEM:3:Ed/Colours:c
+ITEM:4:Ed/DF-Tiles:x
+ITEM:5:Console:?
+ITEM:6:Shadow
+
+MENU:5:8
+ITEM:0:Go Up
+ITEM:1:Clone/abv
+ITEM:2:Clone/blw
+ITEM:3:Shift Dn
+ITEM:4:Shift Up
+ITEM:5:Count
+ITEM:6:Ground
+ITEM:7:About
