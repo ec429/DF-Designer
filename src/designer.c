@@ -1881,7 +1881,7 @@ int main(int argc, char *argv[])
 			}
 		}
 		
-		// Menu actions (incomplete)
+		// Menu actions
 		if(mdo!=-1)
 		{
 			switch((10*menu)+mdo)
