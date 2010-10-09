@@ -145,7 +145,7 @@ int dcounter(gui guibits, int x, int y, double val, char what)
 	int i;
 	for(i=0;i<3;i++)
 	{
-		double num=val*exp10(i-2);
+		double num=val*pow(10, i-2);
 		num=floor(num)-10*floor(num/10);
 		SDL_Rect numeral={0, num*16, 16, 16};
 		SDL_Rect dest={x+(i*16), y, 16, 16};
