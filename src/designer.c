@@ -1511,71 +1511,6 @@ int main(int argc, char *argv[])
 							}
 							lastkey='o';
 						}
-						if(key.sym==SDLK_b)
-						{
-							if(viewmode==0)
-							{
-								if((x>=0) && (x<worldx) && (y>=0) && (y<worldy))
-								{
-									keyplace=!(map[zslice][x][y].data & TILE_OBJECT);
-									if(key.mod & (KMOD_LCTRL | KMOD_RCTRL))
-										keyactive=true;
-								}
-							}
-							lastkey='b';
-						}
-						if(key.sym==SDLK_c)
-						{
-							if(viewmode==0)
-							{
-								if((x>=0) && (x<worldx) && (y>=0) && (y<worldy))
-								{
-									keyplace=!(map[zslice][x][y].data & TILE_OBJECT);
-									if(key.mod & (KMOD_LCTRL | KMOD_RCTRL))
-										keyactive=true;
-								}
-							}
-							lastkey='c';
-						}
-						if(key.sym==SDLK_a)
-						{
-							if(viewmode==0)
-							{
-								if((x>=0) && (x<worldx) && (y>=0) && (y<worldy))
-								{
-									keyplace=!(map[zslice][x][y].data & TILE_OBJECT);
-									if(key.mod & (KMOD_LCTRL | KMOD_RCTRL))
-										keyactive=true;
-								}
-							}
-							lastkey='a';
-						}
-						if(key.sym==SDLK_u)
-						{
-							if(viewmode==0)
-							{
-								if((x>=0) && (x<worldx) && (y>=0) && (y<worldy))
-								{
-									keyplace=!(map[zslice][x][y].data & TILE_OBJECT);
-									if(key.mod & (KMOD_LCTRL | KMOD_RCTRL))
-										keyactive=true;
-								}
-							}
-							lastkey='u';
-						}
-						if(key.sym==SDLK_p)
-						{
-							if(viewmode==0)
-							{
-								if((x>=0) && (x<worldx) && (y>=0) && (y<worldy))
-								{
-									keyplace=!(map[zslice][x][y].data & TILE_OBJECT);
-									if(key.mod & (KMOD_LCTRL | KMOD_RCTRL))
-										keyactive=true;
-								}
-							}
-							lastkey='p';
-						}
 						if((key.sym==SDLK_GREATER) || (key.sym==SDLK_PERIOD)) // Zslice - which Zlevel to edit (Editmode) / top Zlevel to show (Iso-mode)
 						{
 							zslice=max(zslice-1, 0);
@@ -1619,119 +1554,9 @@ int main(int argc, char *argv[])
 							sprintf(string, "uslice %u", uslice);
 							console(screen, overlay, 8, string, small_font);
 						}
-						if(key.sym==SDLK_m) // Semislice/Shadowing
+						if(key.sym==SDLK_v)
 						{
-							semislice=!semislice;
-							if(viewmode==1)
-							{
-								if(semislice)
-									console(screen, overlay, 8, "semislice ON", small_font);
-								else
-									console(screen, overlay, 8, "semislice OFF", small_font);
-							}
-							else
-							{
-								if(semislice)
-									console(screen, overlay, 8, "shadowing OFF", small_font);
-								else
-									console(screen, overlay, 8, "shadowing ON", small_font);
-							}
-						}
-						if((key.sym==SDLK_QUESTION) || (key.sym==SDLK_SLASH))
-						{
-							zslice=groundlevel;
-							char zmsg[16];
-							sprintf(zmsg, "zslice %u", zslice);
-							console(screen, overlay, 8, zmsg, small_font);
-						}
-						if(((key.sym==SDLK_SEMICOLON) && (key.mod & (KMOD_LSHIFT | KMOD_RSHIFT))) || (key.sym==SDLK_COLON))
-						{
-							editmode=0;
-							console(screen, overlay, 8, "Edit-mode COLOURS selected", small_font);
-							if(semislice)
-								console(screen, overlay, 8, "shadowing OFF", small_font);
-							else
-								console(screen, overlay, 8, "shadowing ON", small_font);
-						}
-						if(((key.sym==SDLK_QUOTE) && (key.mod & (KMOD_LSHIFT | KMOD_RSHIFT))) || (key.sym==SDLK_AT))
-						{
-							editmode=1;
-							console(screen, overlay, 8, "Edit-mode DF-TILES selected", small_font);
-						}
-						if((key.sym==SDLK_e) || ((key.sym==SDLK_SPACE) && (viewmode!=0)))
-						{
-							viewmode=0;
-							console(screen, overlay, 8, "Editing mode selected", small_font);
-							switch(editmode)
-							{
-								case 0:
-									console(screen, overlay, 8, "Edit-mode COLOURS selected", small_font);
-									if(semislice)
-										console(screen, overlay, 8, "shadowing OFF", small_font);
-									else
-										console(screen, overlay, 8, "shadowing ON", small_font);
-								break;
-								case 1:
-									console(screen, overlay, 8, "Edit-mode DF-TILES selected", small_font);
-								break;
-								default:
-									console(screen, overlay, 8, "Don't know what edit-mode this is... error!", small_font);
-								break;
-							}
-						}
-						else if((key.sym==SDLK_i) || ((key.sym==SDLK_SPACE) && (viewmode==0)))
-						{
-							viewmode=1;
-							console(screen, overlay, 8, "Isometric View mode selected", small_font);
-							if(semislice)
-								console(screen, overlay, 8, "semislice ON", small_font);
-							else
-								console(screen, overlay, 8, "semislice OFF", small_font);
-						}
-						if(key.sym==SDLK_HASH) // Count everything
-						{
-							console(screen, overlay, 8, "Counting materials...", small_font);
-							int walls=0,floors=0,doors=0,stairs=0,beds=0,chairs=0,tables=0,statues=0;
-							int x,y,z;
-							for(z=0;z<levels;z++)
-							{
-								for(y=0;y<worldy;y++)
-								{
-									for(x=0;x<worldx;x++)
-									{
-										int here=map[z][x][y].data; // If we detect a whatever, we increment that counter
-										if((z>=groundlevel) && (here & (TILE_ROCK|TILE_FORTS))) // Forts are made from walls
-											walls++;
-										else if(here & TILE_FLOOR)
-											floors++;
-										else if(here & TILE_DOOR)
-											doors++;
-										else if(here & TILE_STAIRS)
-											stairs++;
-										if(here & TILE_OBJECT)
-										{
-											int object=map[z][x][y].object;
-											if(object==OBJECT_BED)
-												beds++;
-											else if(object==OBJECT_CHAIR)
-												chairs++;
-											else if(object==OBJECT_TABLE)
-												tables++;
-											else if(object==OBJECT_STATUE)
-												statues++;
-										}
-									}
-								}
-							}
-							char string[100];
-							sprintf(string, " %u walls, %u floors, %u doors, %u stairs", walls, floors, doors, stairs);
-							colconsole(screen, overlay, 8, string, small_font, 255, 255, 255);
-							sprintf(string, " %u beds, %u chairs, %u tables, %u statues", beds, chairs, tables, statues);
-							colconsole(screen, overlay, 8, string, small_font, 255, 255, 255);
-						}
-						if(key.sym==SDLK_BACKSLASH)
-						{
-							groundlevel=zslice;
+							menu=4;mdo=viewmode?1:2;
 						}
 						if(key.sym==SDLK_h)
 						{
@@ -1759,8 +1584,7 @@ int main(int argc, char *argv[])
 							console(screen, overlay, 0, "i     Isometric mode", small_font);
 							console(screen, overlay, 0, "[]     Rotate horizontal", small_font);
 							console(screen, overlay, 0, "{}   Rotate vertical", small_font);
-							console(screen, overlay, 0, "v    Mode toggle", small_font);
-							//console(screen, overlay, 0, "", small_font);
+							console(screen, overlay, 0, "v     Mode toggle", small_font);
 							//console(screen, overlay, 8, "", small_font);
 						}
 						if((key.sym==SDLK_SEMICOLON) && !(key.mod & (KMOD_LSHIFT | KMOD_RSHIFT)))
@@ -1818,7 +1642,7 @@ int main(int argc, char *argv[])
 					if(event.key.type==SDL_KEYUP)
 					{
 						SDL_keysym key=event.key.keysym;
-						if((key.sym==SDLK_r) || (key.sym==SDLK_w) || (key.sym==SDLK_f) || (key.sym==SDLK_g) || (key.sym==SDLK_t) || (key.sym==SDLK_d) || (key.sym==SDLK_o) || (key.sym==SDLK_b) || (key.sym==SDLK_c) || (key.sym==SDLK_a) || (key.sym==SDLK_p) || (key.sym==SDLK_u) || (key.sym==SDLK_SPACE))
+						if((key.sym==SDLK_r) || (key.sym==SDLK_w) || (key.sym==SDLK_f) || (key.sym==SDLK_g) || (key.sym==SDLK_t) || (key.sym==SDLK_d) || (key.sym==SDLK_o) || (key.sym==SDLK_SPACE))
 							keyactive=false;
 						if(key.sym==SDLK_LEFT)
 							dview.x=max(dview.x, 0);
@@ -2275,13 +2099,7 @@ int main(int argc, char *argv[])
 							groundlevel++;
 						colconsole(screen, overlay, 20, "Done!", small_font, 32, 128, 32);
 					}
-<<<<<<< HEAD:src/designer.c
-				break;
-				case SDL_KEYUP: // Keyups: stop various continuous things
-					if(event.key.type==SDL_KEYUP)
-=======
 					else
->>>>>>> newgui:src/designer.c
 					{
 						colconsole(screen, overlay, 20, "Z-level copy cancelled.", small_font, 128, 104, 32);
 					}
