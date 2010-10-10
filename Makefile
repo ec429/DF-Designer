@@ -44,14 +44,6 @@ dist: all
 	cp Makefile dfdesigner_$(VERSION)
 	cp readme dfdesigner_$(VERSION)
 	-ln $(BINDIR)designer dfdesigner_$(VERSION)/designer --symbolic
-	-rm dfdesigner_$(VERSION)/$(BINDIR)*~
-	-rm dfdesigner_$(VERSION)/$(SRCDIR)*~
-	-rm dfdesigner_$(VERSION)/$(INCDIR)*~
-	-rm dfdesigner_$(VERSION)/$(LIBDIR)*~
-	-rm dfdesigner_$(VERSION)/$(FNTDIR)*~
-	-rm dfdesigner_$(VERSION)/$(IMGDIR)*~
-	-rm dfdesigner_$(VERSION)/$(INITDIR)*~
-	-rm dfdesigner_$(VERSION)/*~
 	tar -cvvf dfdesigner_$(VERSION).tar dfdesigner_$(VERSION)/
 	gzip -9 dfdesigner_$(VERSION).tar
 
@@ -67,12 +59,6 @@ distw:
 	cp wbits/Makefile dfdw_$(VERSION)
 	for p in `ls wbits`; do cp wbits/$$p dfdw_$(VERSION); done;
 	cp readme dfdw_$(VERSION)
-	-rm dfdw_$(VERSION)/$(BINDIR)*~
-	-rm dfdw_$(VERSION)/$(SRCDIR)*~
-	-rm dfdw_$(VERSION)/$(INCDIR)*~
-	-rm dfdw_$(VERSION)/$(LIBDIR)*~
-	-rm dfdw_$(VERSION)/$(FNTDIR)*~
-	-rm dfdw_$(VERSION)/$(IMGDIR)*~
-	-rm dfdw_$(VERSION)/$(INITDIR)*~
-	-rm dfdw_$(VERSION)/*~
+	-rm dfdw_$(VERSION)/$(BINDIR)designer
+	-rm dfdw_$(VERSION)/$(LIBDIR)*.o
 	make -C dfdw_$(VERSION) -fMakefile all

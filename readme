@@ -7,7 +7,7 @@ DF Designer is a fort layout *planning* tool.  It enables you to work out your d
 Note that DF Designer does *not* talk to DF; it's not a visualiser for your existing fort, or a memory hacker, or anything like that.
 
 ==System Requirements==
-To run DF Designer, you will need either Linux or Windows, unless you have the tools to compile onto another platform.  Note that Windows is not officially supported.
+To run DF Designer, you will need either Linux or Windows, unless you have the tools to compile onto another platform.  Note that Windows is not officially supported.  There is also an unofficial port for Mac OS X, maintained by HebaruSan.
 DFD uses about 7MB of RAM for the default map size; at the maximum possible map size (2048*2048*256), it uses about 2GB.
 The Isometric view is executed on CPU (not GPU) so might be slow on older or low-end machines.
 The Minimap will /really crawl/ on large maps.
@@ -29,7 +29,7 @@ Command-line options:
 
 ==The Basics==
 DF Designer has two modes, Edit (top-down slice) and Isometric (view only).  You can switch between these modes with the keys 'e' and 'i' respectively, or toggle with 'v'.
-You do your actual building in Edit mode.  To edit a tile in any way, you move your cursor over it (you should see a little yellow box around the tile you're currently hovering over), and then left-click.  You can also click-and-drag, thus allowing you to designate several tiles.  To choose /what/ to build, press one of the designation keys (press 'h' for a listing).  You can see which tool is currently selected from the icon below the menu (although some of the images aren't done yet, so you just get a placeholder).  You can also select tools using the menu system (menus 2 and 3).
+You do your actual building in Edit mode.  To edit a tile in any way, you move your cursor over it (you should see a little yellow box around the tile you're currently hovering over), and then left-click.  You can also click-and-drag, thus allowing you to designate several tiles.  To choose /what/ to build, press one of the designation keys (press 'h' for a listing).  You can see which tool is currently selected from the icon below the menu.  You can also select tools using the menu system (menus 2 and 3).
 Isometric mode is actually a misnomer; it renders in 3D and you can rotate the view in both azimuth ('[' and ']') and elevation ('{' and '}').
 
 ==In more detail==
@@ -43,7 +43,7 @@ DF Designer doesn't implement anything near the full ontology of buildings and c
 'Objects' - beds, chairs, tables, and other stuff - don't appear in Isometric mode right now, because I haven't done any models or anything like that for them yet.
 "Shadowing" is DF Designer's way of showing you what's on nearby levels, in Edit-COLOURS mode; fainter versions of the z-levels above and below are superimposed upon the current level.  You can toggle shadowing from the View menu (4/6).
 "Semislice" allows you to choose whether the slice in Isometric mode cuts above or below the floors.  You can toggle semislice from the View menu (4/6).
-You might notice that shadowing and semislice both use the same menu button.  In fact, they are controlled together; whenever one is turned on, the other is turned off.  Since only one has any effect at once (they affect different modes), this saves a letter on the keyboard (which is just as well as we're going to run out soon at this rate).
+You might notice that shadowing and semislice both use the same menu button.  In fact, they are controlled together; whenever one is turned on, the other is turned off.  Since only one has any effect at once (they affect different modes), this shouldn't matter.
 
 That's basically it.  You might wonder what the rules are for placing things on top of other things, and whether what was there before stays there; answer: it's all ad-hoc.  Just try stuff; after all, you can always get back to what you had before (though if you've put lots of work in, you might want to save first, because there's no 'undo' feature yet).
 
