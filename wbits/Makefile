@@ -11,14 +11,14 @@ INITDIR = init/
 DGFX = -DOSIZ_X=800 -DOSIZ_Y=640 -DOBPP=32
 DFONT = -DFONT_FILE=\"$(FNTDIR)Vera.ttf\"
 
-all: $(BINDIR)designer.exe
+all: designer.exe
 
 $(INCDIR)version.h: $(SRCDIR)designer.c $(SRCDIR)draw.c $(INCDIR)draw.h $(SRCDIR)dialogs.c $(INCDIR)dialogs.h $(INCDIR)437.h
 	bash ./gitversion
 
-$(BINDIR)designer.exe: $(SRCDIR)designer.c $(LIBDIR)draw.dll $(INCDIR)draw.h $(LIBDIR)dialogs.dll $(INCDIR)dialogs.h $(INCDIR)437.h $(INCDIR)version.h
+designer.exe: $(SRCDIR)designer.c $(LIBDIR)draw.dll $(INCDIR)draw.h $(LIBDIR)dialogs.dll $(INCDIR)dialogs.h $(INCDIR)437.h $(INCDIR)version.h
 	-mkdir $(BINDIR)
-	$(CC) $(CFLAGS) $(SDL) -o $(BINDIR)designer.exe $(SRCDIR)designer.c $(LIBDIR)draw.dll $(LIBDIR)dialogs.dll -lm $(DGFX) $(DFONT)
+	$(CC) $(CFLAGS) $(SDL) -o designer.exe $(SRCDIR)designer.c $(LIBDIR)draw.dll $(LIBDIR)dialogs.dll -lm $(DGFX) $(DFONT)
 
 $(LIBDIR)draw.dll: $(SRCDIR)draw.c $(INCDIR)draw.h
 	-mkdir $(LIBDIR)

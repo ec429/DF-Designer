@@ -49,7 +49,6 @@ dist: all
 
 distw:
 	-mkdir dfdw_$(VERSION)
-	cp -r $(BINDIR) dfdw_$(VERSION)/$(BINDIR)
 	cp -r $(SRCDIR) dfdw_$(VERSION)/$(SRCDIR)
 	cp -r $(INCDIR) dfdw_$(VERSION)/$(INCDIR)
 	cp -r $(LIBDIR) dfdw_$(VERSION)/$(LIBDIR)
@@ -59,6 +58,5 @@ distw:
 	cp wbits/Makefile dfdw_$(VERSION)
 	for p in `ls wbits`; do cp wbits/$$p dfdw_$(VERSION); done;
 	cp readme dfdw_$(VERSION)
-	-rm dfdw_$(VERSION)/$(BINDIR)designer
 	-rm dfdw_$(VERSION)/$(LIBDIR)*.o
 	make -C dfdw_$(VERSION) -fMakefile all
