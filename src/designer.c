@@ -54,7 +54,6 @@
 #define MAX_WORLDY	2048
 #define MAX_WORLDZ	256
 
-// Holds enough info for functions needing to write console or dialogues to do so
 typedef struct
 {
 	char *text;
@@ -440,7 +439,7 @@ int main(int argc, char *argv[])
 	console(screen, overlay, 20, "Press ; for list of colour-codes.", small_font);
 	
 	console(screen, overlay, 8, "In Editing mode, using COLOUR tiles.", small_font);
-	console(screen, overlay, 8, "Shadowing is ON - [m] to toggle.", small_font);
+	console(screen, overlay, 8, "Shadowing is ON - 4,6 to toggle.", small_font);
 	
 	// Set up control vars
 	char button;
@@ -1511,6 +1510,17 @@ int main(int argc, char *argv[])
 							}
 							lastkey='o';
 						}
+						if(key.sym==SDLK_SPACE)
+						{
+							if(viewmode==0)
+							{
+								if((x>=0) && (x<worldx) && (y>=0) && (y<worldy))
+								{
+									keyplace=!(map[zslice][x][y].data);
+									keyactive=true;
+								}
+							}
+						}
 						if((key.sym==SDLK_GREATER) || (key.sym==SDLK_PERIOD)) // Zslice - which Zlevel to edit (Editmode) / top Zlevel to show (Iso-mode)
 						{
 							zslice=max(zslice-1, 0);
@@ -1571,13 +1581,15 @@ int main(int argc, char *argv[])
 							console(screen, overlay, 0, "z    zslice to groundlevel", small_font);
 							console(screen, overlay, 0, "cursors move viewport", small_font);
 							console(screen, overlay, 0, "- +  uslice up/down", small_font);
-							console(screen, overlay, 0, "r     dig/undig Rock", small_font);
-							console(screen, overlay, 0, "f     place/remove Floor", small_font);
-							console(screen, overlay, 0, "d    place/remove Door", small_font);
-							console(screen, overlay, 0, "g    place/remove Grass", small_font);
-							console(screen, overlay, 0, "w    place/remove Water", small_font);
-							console(screen, overlay, 0, "t     place/remove sTairs", small_font);
-							console(screen, overlay, 0, "o    place/remove fOrtifications", small_font);
+							console(screen, overlay, 0, "r     tool Rock", small_font);
+							console(screen, overlay, 0, "f     tool Floor", small_font);
+							console(screen, overlay, 0, "d    tool Door", small_font);
+							console(screen, overlay, 0, "g    tool Grass", small_font);
+							console(screen, overlay, 0, "w    tool Water", small_font);
+							console(screen, overlay, 0, "t     tool sTairs", small_font);
+							console(screen, overlay, 0, "o    tool fOrtifications", small_font);
+							console(screen, overlay, 0, "Ctrl-toolkey use tool at cursor", small_font);
+							console(screen, overlay, 0, "spc use current tool at cursor", small_font);
 							console(screen, overlay, 0, "e    Edit mode", small_font);
 							console(screen, overlay, 0, "c     --COLOURS", small_font);
 							console(screen, overlay, 0, "x     --DF-TILES", small_font);
@@ -1850,6 +1862,7 @@ int main(int argc, char *argv[])
 									}
 								}
 							}
+							keyactive=false;
 						break;
 						case SDL_BUTTON_RIGHT:
 							makekey.type=SDL_KEYUP;

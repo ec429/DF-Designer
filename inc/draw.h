@@ -26,6 +26,7 @@ typedef struct
 }
 cparms;
 
+// Holds enough info for functions needing to write console or dialogues to do so
 typedef struct
 {
 	SDL_Surface * screen, * overlay;
