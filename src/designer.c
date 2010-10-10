@@ -1525,16 +1525,10 @@ int main(int argc, char *argv[])
 						{
 							zslice=max(zslice-1, 0);
 							uslice=min(uslice, zslice);
-							char string[16];
-							sprintf(string, "zslice %u", zslice);
-							console(screen, overlay, 8, string, small_font);
 						}
 						if((key.sym==SDLK_LESS) || (key.sym==SDLK_COMMA))
 						{
 							zslice=min(zslice+1, levels-1);
-							char string[16];
-							sprintf(string, "zslice %u", zslice);
-							console(screen, overlay, 8, string, small_font);
 						}
 						if(key.sym==SDLK_RIGHTBRACKET) // Rotate 3d view
 						{
