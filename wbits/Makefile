@@ -18,7 +18,7 @@ $(INCDIR)version.h: $(SRCDIR)designer.c $(SRCDIR)draw.c $(INCDIR)draw.h $(SRCDIR
 
 designer.exe: $(SRCDIR)designer.c $(LIBDIR)draw.dll $(INCDIR)draw.h $(LIBDIR)dialogs.dll $(INCDIR)dialogs.h $(INCDIR)437.h $(INCDIR)version.h
 	-mkdir $(BINDIR)
-	$(CC) $(CFLAGS) $(SDL) -o designer.exe $(SRCDIR)designer.c $(LIBDIR)draw.dll $(LIBDIR)dialogs.dll -lm $(DGFX) $(DFONT)
+	$(CC) $(CFLAGS) $(SDL) -o designer.exe $(SRCDIR)designer.c $(LIBDIR)draw.dll $(LIBDIR)dialogs.dll -lm $(DGFX) $(DFONT) -llibpng12-0.dll -lzlib1.dll -ljpeg.dll -llibtiff-3.dll -llibfreetype-6.dll
 
 $(LIBDIR)draw.dll: $(SRCDIR)draw.c $(INCDIR)draw.h
 	-mkdir $(LIBDIR)
