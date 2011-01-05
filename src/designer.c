@@ -23,10 +23,10 @@
 #include <math.h>
 #include <string.h>
 
-#include "../inc/draw.h"
-#include "../inc/dialogs.h"
-#include "../inc/437.h"
-#include "../inc/version.h"
+#include "draw.h"
+#include "dialogs.h"
+#include "437.h"
+#include "version.h"
 
 // Map data definitions
 #define TILE_ROCK	1

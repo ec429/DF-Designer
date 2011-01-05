@@ -2,7 +2,7 @@
 //	Copyright (C) 2010 Edward Cree (see top of src/designer.c for license details)
 //   src/draw.c - provides drawing-functions
 
-#include "../inc/draw.h"
+#include "draw.h"
 
 #define max(a,b)	((a)>(b)?(a):(b))
 #define min(a,b)	((a)<(b)?(a):(b))

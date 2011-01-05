@@ -2,7 +2,7 @@
 //	Copyright (C) 2010 Edward Cree (see top of src/designer.c for license details)
 //   src/dialogs.c - gui dialogue boxes
 
-#include "../inc/dialogs.h"
+#include "dialogs.h"
 
 int okbox(SDL_Surface * screen, SDL_Surface * boximage, char ** boxtext, int boxtextlines, SDL_Surface * button_u, SDL_Surface * button_p, TTF_Font * font, TTF_Font * buttonfont, char * buttontext, char r, char g, char b, char br, char bg, char bb)
 {

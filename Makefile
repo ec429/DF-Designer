@@ -1,15 +1,17 @@
-CC ?= gcc
-CFLAGS ?= -Wall
-SDL = `sdl-config --cflags --libs` -lSDL_image -lSDL_ttf
-BINDIR = bin/
-SRCDIR = src/
-INCDIR = inc/
-LIBDIR = lib/
-FNTDIR = font/
-IMGDIR = img/
-INITDIR = init/
-DGFX = -DOSIZ_X=800 -DOSIZ_Y=640 -DOBPP=32
-DFONT = -DFONT_FILE=\"$(FNTDIR)Vera.ttf\"
+CC := gcc
+CFLAGS := -Wall -Wextra -pedantic -std=gnu99
+SDL := `sdl-config --cflags --libs` -lSDL_image -lSDL_ttf
+BINDIR := bin/
+SRCDIR := src/
+INCDIR := inc/
+LIBDIR := lib/
+FNTDIR := font/
+IMGDIR := img/
+INITDIR := init/
+CPPFLAGS := -I$(INCDIR)
+FLAGS := $(CFLAGS) $(CPPFLAGS) $(LDFLAGS)
+DGFX := -DOSIZ_X=800 -DOSIZ_Y=640 -DOBPP=32
+DFONT := -DFONT_FILE=\"$(FNTDIR)Vera.ttf\"
 VERSION := `git describe --tags`
 
 all: designer $(BINDIR)designer
@@ -22,15 +24,15 @@ $(INCDIR)version.h: $(SRCDIR)designer.c $(LIBDIR)draw.o $(INCDIR)draw.h $(LIBDIR
 
 $(BINDIR)designer: $(SRCDIR)designer.c $(LIBDIR)draw.o $(INCDIR)draw.h $(LIBDIR)dialogs.o $(INCDIR)dialogs.h $(INCDIR)437.h $(INCDIR)version.h
 	-mkdir $(BINDIR)
-	$(CC) $(CFLAGS) $(SDL) -o $(BINDIR)designer $(SRCDIR)designer.c $(LIBDIR)draw.o $(LIBDIR)dialogs.o -lm $(DGFX) $(DFONT)
+	$(CC) $(FLAGS) $(SDL) -o $(BINDIR)designer $(SRCDIR)designer.c $(LIBDIR)draw.o $(LIBDIR)dialogs.o -lm $(DGFX) $(DFONT)
 
 $(LIBDIR)draw.o: $(SRCDIR)draw.c $(INCDIR)draw.h
 	-mkdir $(LIBDIR)
-	$(CC) $(CFLAGS) $(SDL) -o $(LIBDIR)draw.o -c $(SRCDIR)draw.c $(DGFX)
+	$(CC) $(FLAGS) $(SDL) -o $(LIBDIR)draw.o -c $(SRCDIR)draw.c $(DGFX)
 
 $(LIBDIR)dialogs.o: $(SRCDIR)dialogs.c $(INCDIR)dialogs.h
 	-mkdir $(LIBDIR)
-	$(CC) $(CFLAGS) $(SDL) -o $(LIBDIR)dialogs.o -c $(SRCDIR)dialogs.c
+	$(CC) $(FLAGS) $(SDL) -o $(LIBDIR)dialogs.o -c $(SRCDIR)dialogs.c
 
 dist: all
 	mkdir dfdesigner_$(VERSION)
