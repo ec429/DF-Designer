@@ -240,3 +240,56 @@ int dcuboid(SDL_Surface * screen, int x, int y, cparms cbd, unsigned char r, uns
 	}
 	return(0);
 }
+
+int console(gui guibits, int delay, char *text)
+{
+	return(colconsole(guibits, delay, text, 192, 192, 192));
+}
+
+int colconsole(gui guibits, int delay, char *text, unsigned char r, unsigned char g, unsigned char b)
+{
+	if(SDL_MUSTLOCK(guibits.overlay))
+		SDL_LockSurface(guibits.overlay);
+	dtext(guibits.overlay, 8, CONSOLE_HEIGHT, text, guibits.small_font, r, g, b);
+	SDL_Rect cls;
+	cls.x=0;
+	cls.y=OSIZ_Y-CONSOLE_HEIGHT;
+	cls.w=OSIZ_X;
+	cls.h=CONSOLE_HEIGHT+20;
+	if(showconsole)
+	{
+		int i,y;
+		for(i=0;i<16;i+=4)
+		{
+			for(y=0;y+4<CONSOLE_HEIGHT+20;y++)
+			{
+				memcpy((char *)guibits.overlay->pixels+(y*guibits.overlay->pitch), (char *)guibits.overlay->pixels+((y+4)*guibits.overlay->pitch), guibits.overlay->pitch);
+			}
+			if(delay)
+			{
+				SDL_BlitSurface(guibits.overlay, NULL, guibits.screen, &cls);
+				SDL_Flip(guibits.screen);
+				SDL_Delay(delay);
+			}
+		}
+		if(SDL_MUSTLOCK(guibits.overlay))
+			SDL_UnlockSurface(guibits.overlay);
+		SDL_BlitSurface(guibits.overlay, NULL, guibits.screen, &cls);
+		SDL_Flip(guibits.screen);
+	}
+	else
+	{
+		int y;
+		for(y=0;y<CONSOLE_HEIGHT;y++)
+		{
+			memcpy((char *)guibits.overlay->pixels+(y*guibits.overlay->pitch), (char *)guibits.overlay->pixels+((y+16)*guibits.overlay->pitch), guibits.overlay->pitch);
+		}
+		for(y=CONSOLE_HEIGHT;y<CONSOLE_HEIGHT+20;y++)
+		{
+			memset((char *)guibits.overlay->pixels+(y*guibits.overlay->pitch), 0, guibits.overlay->pitch);
+		}
+		if(SDL_MUSTLOCK(guibits.overlay))
+			SDL_UnlockSurface(guibits.overlay);
+	}
+	return(0);
+}

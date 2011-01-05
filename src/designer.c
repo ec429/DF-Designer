@@ -46,9 +46,6 @@
 #define max(a,b)	((a)>(b)?(a):(b))
 #define min(a,b)	((a)<(b)?(a):(b))
 
-#define CONSOLE_WIDTH 280
-#define CONSOLE_HEIGHT OSIZ_Y
-
 // Maximum map sizes
 #define MAX_WORLDX	2048
 #define MAX_WORLDY	2048
@@ -84,11 +81,7 @@ disp_tile;
 // Useful tile definitions (blank and error)
 disp_tile wb={' ', 255, 255, 255, 0, 0, 0}, err={'!', 255, 0, 0, 0, 0, 192};
 
-bool showconsole=true;
-
 // TODO: bud these off into appropriate lib files
-int console(SDL_Surface * screen, SDL_Surface * overlay, int delay, char * text, TTF_Font * font); // draw
-int colconsole(SDL_Surface * screen, SDL_Surface * overlay, int delay, char * text, TTF_Font * font, unsigned char r, unsigned char g, unsigned char b); // draw
 disp_tile tchar(tile ***map, int x, int y, int z, int worldx, int worldy, int groundlevel); // map
 int load_map(char *filename, tile ****map, gui guibits, int *worldx, int *worldy, int *levels, int *groundlevel, int *zslice, int *uslice, pos *view, pos *dview); // map
 int save_map(char *filename, tile ***map, gui guibits, int worldx, int worldy, int levels, int groundlevel); // map
@@ -104,6 +97,7 @@ int main(int argc, char *argv[])
 	int groundlevel=9;
 	int worldx=96;
 	int worldy=96;
+	showconsole=true;
 	char *lfn=NULL;
 	// parse arguments
 	int arg;
@@ -163,7 +157,7 @@ int main(int argc, char *argv[])
 	TTF_Font *tiny_font=TTF_OpenFont(FONT_FILE, 8);
 	TTF_Font *small_font=TTF_OpenFont(FONT_FILE, 11);
 	TTF_Font *big_font=TTF_OpenFont(FONT_FILE, 24);
-	if((!small_font) || (!big_font))
+	if((!tiny_font) || (!small_font) || (!big_font))
 	{
 		fprintf(stderr, "Failed to load fonts!\n");
 		fprintf(stderr, "TTF_OpenFont: %s\n", TTF_GetError());
@@ -191,17 +185,24 @@ int main(int argc, char *argv[])
 	SDL_Surface * overlay = SDL_CreateRGBSurface(SDL_SWSURFACE, CONSOLE_WIDTH, CONSOLE_HEIGHT+20, OBPP, 0, 0, 0, 0);
 	SDL_FillRect(overlay, &cls, SDL_MapRGB(overlay->format, 0, 0, 0));
 	
+	// Fill out the guibits information (enough for the console)
+	gui guibits;
+	guibits.screen=screen;
+	guibits.overlay=overlay;
+	guibits.small_font=small_font;
+	guibits.big_font=big_font;
+	
 	// Version & startup messages
 	cls.h-=20;
 	{
 		char vermsg[32+strlen(VERSION_GIT)];
 		sprintf(vermsg, "DF Designer %hhu.%hhu.%hhu%s%s", VERSION_MAJ, VERSION_MIN, VERSION_REV, VERSION_GIT[0]?"-":"", VERSION_GIT);
-		console(screen, overlay, 20, vermsg, small_font);
+		console(guibits, 20, vermsg);
 		fprintf(stderr, "%s\n", vermsg);
 	}
 	
 	fprintf(stderr, "Reading init/menu\n");
-	console(screen, overlay, 20, "Reading init/menu", small_font);
+	console(guibits, 20, "Reading init/menu");
 	FILE *mfp = fopen("init/menu", "r");
 	char ** mfile=NULL;int nlines=0;
 	while(!feof(mfp))
@@ -337,7 +338,7 @@ int main(int argc, char *argv[])
 	free(mfile);
 	
 	fprintf(stderr, "Loading gui images...\n");
-	console(screen, overlay, 20, "Loading gui images...", small_font);
+	console(guibits, 20, "Loading gui images...");
 	
 	// Load in GUI images
 	SDL_Surface * small_button_u = IMG_Load("img/small_button_u.png");
@@ -351,6 +352,11 @@ int main(int argc, char *argv[])
 		fprintf(stderr, "IMG_Load: %s\n", IMG_GetError());
 		return(1);
 	}
+	
+	guibits.small_button_u=small_button_u;
+	guibits.small_button_p=small_button_p;
+	guibits.box_small=box_small;
+	guibits.counter=counter;
 	
 	/* read in the newgui images - first the 'base' ones, then try to open the art ones and if not, procedurally generate from the base ones & text */
 	SDL_Surface * menubase[nmenus], * menubtn[nmenus][10];
@@ -419,7 +425,7 @@ int main(int argc, char *argv[])
 	}
 	else
 	{
-		console(screen, overlay, 20, "Warning!  DF Designer is still beta!", small_font);
+		console(guibits, 20, "Warning!  DF Designer is still beta!");
 	}
 	
 	// Send the key-help through the console, unless -h was given
@@ -435,11 +441,11 @@ int main(int argc, char *argv[])
 		SDL_PushEvent(&makekey);
 	}
 	else
-		colconsole(screen, overlay, 20, "Press h for key help.", small_font, 255, 255, 255);
-	console(screen, overlay, 20, "Press ; for list of colour-codes.", small_font);
+		colconsole(guibits, 20, "Press h for key help.", 255, 255, 255);
+	console(guibits, 20, "Press ; for list of colour-codes.");
 	
-	console(screen, overlay, 8, "In Editing mode, using COLOUR tiles.", small_font);
-	console(screen, overlay, 8, "Shadowing is ON - 4,6 to toggle.", small_font);
+	console(guibits, 8, "In Editing mode, using COLOUR tiles.");
+	console(guibits, 8, "Shadowing is ON - 4,6 to toggle.");
 	
 	// Set up control vars
 	char button;
@@ -471,17 +477,6 @@ int main(int argc, char *argv[])
 	int menu=0;
 	int msel=-1;
 	int mdo=-1;
-	
-	// Fill out the guibits information
-	gui guibits;
-	guibits.screen=screen;
-	guibits.overlay=overlay;
-	guibits.small_font=small_font;
-	guibits.big_font=big_font;
-	guibits.small_button_u=small_button_u;
-	guibits.small_button_p=small_button_p;
-	guibits.box_small=box_small;
-	guibits.counter=counter;
 	
 	// If a filename was given on the cmdline, load it now
 	if(lfn!=NULL)
@@ -976,7 +971,7 @@ int main(int argc, char *argv[])
 									if(!dftiles)
 									{
 										fprintf(stderr, "Error: mode 1 (ASCII-TILES) unavailable.  Reverting to mode 0 (COLOURS)");
-										console(screen, overlay, 20, "Error: mode 1 (ASCII-TILES) unavailable.  Reverting to mode 0 (COLOURS)", small_font);
+										console(guibits, 20, "Error: mode 1 (ASCII-TILES) unavailable.  Reverting to mode 0 (COLOURS)");
 										editmode=0;
 									}
 									else
@@ -1007,7 +1002,7 @@ int main(int argc, char *argv[])
 									char string[100];
 									sprintf(string, "Error: No such editmode %u.  Reverting to mode 0 (COLOURS)", editmode);
 									fprintf(stderr, "%s\n", string);
-									console(screen, overlay, 20, string, small_font);
+									console(guibits, 20, string);
 									editmode=0;
 								break;
 							}
@@ -1288,7 +1283,7 @@ int main(int argc, char *argv[])
 					char string[100];
 					sprintf(string, "Error: No such viewmode %u.  Reverting to mode 0 (slice-down/edit)", viewmode);
 					fprintf(stderr, "%s\n", string);
-					console(screen, overlay, 20, string, small_font);
+					console(guibits, 20, string);
 					viewmode=0;
 				}
 			break;
@@ -1549,14 +1544,14 @@ int main(int argc, char *argv[])
 							uslice=max(uslice-1, 0);
 							char string[16];
 							sprintf(string, "uslice %u", uslice);
-							console(screen, overlay, 8, string, small_font);
+							console(guibits, 8, string);
 						}
 						if(key.sym==SDLK_MINUS)
 						{
 							uslice=min(uslice+1, zslice);
 							char string[16];
 							sprintf(string, "uslice %u", uslice);
-							console(screen, overlay, 8, string, small_font);
+							console(guibits, 8, string);
 						}
 						if(key.sym==SDLK_v)
 						{
@@ -1565,46 +1560,46 @@ int main(int argc, char *argv[])
 						if(key.sym==SDLK_h)
 						{
 							showconsole=true;
-							console(screen, overlay, 0, "==DF Designer Keystroke Help==", small_font);
-							console(screen, overlay, 0, "h    this Help", small_font);
-							console(screen, overlay, 0, ";     list colour codes", small_font);
-							console(screen, overlay, 0, "s    Save map", small_font);
-							console(screen, overlay, 0, "l     Load map", small_font);
-							console(screen, overlay, 0, "?    toggle console/minimap", small_font);
-							console(screen, overlay, 0, "< >  zslice up/down", small_font);
-							console(screen, overlay, 0, "z    zslice to groundlevel", small_font);
-							console(screen, overlay, 0, "cursors move viewport", small_font);
-							console(screen, overlay, 0, "- +  uslice up/down", small_font);
-							console(screen, overlay, 0, "r     tool Rock", small_font);
-							console(screen, overlay, 0, "f     tool Floor", small_font);
-							console(screen, overlay, 0, "d    tool Door", small_font);
-							console(screen, overlay, 0, "g    tool Grass", small_font);
-							console(screen, overlay, 0, "w    tool Water", small_font);
-							console(screen, overlay, 0, "t     tool sTairs", small_font);
-							console(screen, overlay, 0, "o    tool fOrtifications", small_font);
-							console(screen, overlay, 0, "Ctrl-toolkey use tool at cursor", small_font);
-							console(screen, overlay, 0, "spc use current tool at cursor", small_font);
-							console(screen, overlay, 0, "e    Edit mode", small_font);
-							console(screen, overlay, 0, "c     --COLOURS", small_font);
-							console(screen, overlay, 0, "x     --DF-TILES", small_font);
-							console(screen, overlay, 0, "i     Isometric mode", small_font);
-							console(screen, overlay, 0, "[]     Rotate horizontal", small_font);
-							console(screen, overlay, 0, "{}   Rotate vertical", small_font);
-							console(screen, overlay, 0, "v     Mode toggle", small_font);
-							//console(screen, overlay, 8, "", small_font);
+							console(guibits, 0, "==DF Designer Keystroke Help==");
+							console(guibits, 0, "h    this Help");
+							console(guibits, 0, ";     list colour codes");
+							console(guibits, 0, "s    Save map");
+							console(guibits, 0, "l     Load map");
+							console(guibits, 0, "?    toggle console/minimap");
+							console(guibits, 0, "< >  zslice up/down");
+							console(guibits, 0, "z    zslice to groundlevel");
+							console(guibits, 0, "cursors move viewport");
+							console(guibits, 0, "- +  uslice up/down");
+							console(guibits, 0, "r     tool Rock");
+							console(guibits, 0, "f     tool Floor");
+							console(guibits, 0, "d    tool Door");
+							console(guibits, 0, "g    tool Grass");
+							console(guibits, 0, "w    tool Water");
+							console(guibits, 0, "t     tool sTairs");
+							console(guibits, 0, "o    tool fOrtifications");
+							console(guibits, 0, "Ctrl-toolkey use tool at cursor");
+							console(guibits, 0, "spc use current tool at cursor");
+							console(guibits, 0, "e    Edit mode");
+							console(guibits, 0, "c     --COLOURS");
+							console(guibits, 0, "x     --DF-TILES");
+							console(guibits, 0, "i     Isometric mode");
+							console(guibits, 0, "[]     Rotate horizontal");
+							console(guibits, 0, "{}   Rotate vertical");
+							console(guibits, 0, "v     Mode toggle");
+							//console(guibits, 8, "");
 						}
 						if((key.sym==SDLK_SEMICOLON) && !(key.mod & (KMOD_LSHIFT | KMOD_RSHIFT)))
 						{
 							showconsole=true;
-							console(screen, overlay, 8, "==DF Designer Colour Codes==", small_font);
-							colconsole(screen, overlay, 8, "# Rock", small_font, 128, 128, 128);
-							colconsole(screen, overlay, 8, "# Floor", small_font, 224, 224, 96);
-							colconsole(screen, overlay, 8, "# Door", small_font, 224, 112, 112);
-							colconsole(screen, overlay, 8, "# Stairs", small_font, 0, 112, 112);
-							colconsole(screen, overlay, 8, "# Water", small_font, 0, 0, 224);
-							colconsole(screen, overlay, 8, "# Grass", small_font, 96, 224, 96);
-							colconsole(screen, overlay, 8, "# Fortifications", small_font, 112, 224, 192);
-							//colconsole(screen, overlay, 8, "# ", small_font, );
+							console(guibits, 8, "==DF Designer Colour Codes==");
+							colconsole(guibits, 8, "# Rock", 128, 128, 128);
+							colconsole(guibits, 8, "# Floor", 224, 224, 96);
+							colconsole(guibits, 8, "# Door", 224, 112, 112);
+							colconsole(guibits, 8, "# Stairs", 0, 112, 112);
+							colconsole(guibits, 8, "# Water", 0, 0, 224);
+							colconsole(guibits, 8, "# Grass", 96, 224, 96);
+							colconsole(guibits, 8, "# Fortifications", 112, 224, 192);
+							//colconsole(guibits, 8, "# ", );
 						}
 						if ((key.unicode & 0xFF80) == 0) // shortcut keys
 						{
@@ -1744,7 +1739,7 @@ int main(int argc, char *argv[])
 								}
 							}
 							if(lastr)
-								colconsole(screen, overlay, 8, " Cancelled fill.", small_font, 64, 144, 64);
+								colconsole(guibits, 8, " Cancelled fill.", 64, 144, 64);
 							lastr=0;
 						break;
 						case SDL_BUTTON_RIGHT:
@@ -1753,7 +1748,7 @@ int main(int argc, char *argv[])
 								lastx=mouse.x;
 								lasty=mouse.y;
 								lastview=view;
-								colconsole(screen, overlay, 8, " Filling rectangle!", small_font, 192, 144, 96);
+								colconsole(guibits, 8, " Filling rectangle!", 192, 144, 96);
 								if((mouse.x>=280) && (mouse.x<792) && (mouse.y>=8) && (mouse.y<=520))
 								{
 									if(viewmode==0)
@@ -1814,7 +1809,7 @@ int main(int argc, char *argv[])
 								}
 							}
 							else
-								colconsole(screen, overlay, 8, " Filled rectangle.", small_font, 144, 224, 96);
+								colconsole(guibits, 8, " Filled rectangle.", 144, 224, 96);
 							lastr++;
 						break;
 						case SDL_BUTTON_WHEELUP:
@@ -1908,7 +1903,7 @@ int main(int argc, char *argv[])
 						char * filename = textentry(screen, box_small, boxtextlines, 2, small_font, 192, 224, 255);
 						if(*filename==0)
 						{
-							colconsole(screen, overlay, 20, "Load cancelled", small_font, 128, 104, 32);
+							colconsole(guibits, 20, "Load cancelled", 128, 104, 32);
 						}
 						else
 						{
@@ -1926,7 +1921,7 @@ int main(int argc, char *argv[])
 					char * filename = textentry(screen, box_small, boxtextlines, 3, small_font, 192, 224, 255);
 					if(*filename==0)
 					{
-						colconsole(screen, overlay, 20, "Save cancelled", small_font, 128, 104, 32);
+						colconsole(guibits, 20, "Save cancelled", 128, 104, 32);
 					}
 					else
 					{
@@ -1941,7 +1936,7 @@ int main(int argc, char *argv[])
 					char * filename = textentry(screen, box_small, boxtextlines, 3, small_font, 192, 224, 255);
 					if(*filename==0)
 					{
-						colconsole(screen, overlay, 20, "Export cancelled", small_font, 128, 104, 32);
+						colconsole(guibits, 20, "Export cancelled", 128, 104, 32);
 					}
 					else
 					{
@@ -1956,7 +1951,7 @@ int main(int argc, char *argv[])
 					char * filename = textentry(screen, box_small, boxtextlines, 4, small_font, 192, 224, 255);
 					if(*filename==0)
 					{
-						colconsole(screen, overlay, 20, "Export cancelled", small_font, 128, 104, 32);
+						colconsole(guibits, 20, "Export cancelled", 128, 104, 32);
 					}
 					else
 					{
@@ -2017,43 +2012,43 @@ int main(int argc, char *argv[])
 				break;
 				case 41: // Edit-mode
 					viewmode=0;
-					console(screen, overlay, 8, "Editing mode selected", small_font);
+					console(guibits, 8, "Editing mode selected");
 					switch(editmode)
 					{
 						case 0:
-							console(screen, overlay, 8, "Edit-mode COLOURS selected", small_font);
+							console(guibits, 8, "Edit-mode COLOURS selected");
 							if(semislice)
-								console(screen, overlay, 8, "shadowing OFF", small_font);
+								console(guibits, 8, "shadowing OFF");
 							else
-								console(screen, overlay, 8, "shadowing ON", small_font);
+								console(guibits, 8, "shadowing ON");
 						break;
 						case 1:
-							console(screen, overlay, 8, "Edit-mode DF-TILES selected", small_font);
+							console(guibits, 8, "Edit-mode DF-TILES selected");
 						break;
 						default:
-							console(screen, overlay, 8, "Don't know what edit-mode this is... error!", small_font);
+							console(guibits, 8, "Don't know what edit-mode this is... error!");
 						break;
 					}
 				break;
 				case 42: // Iso/3D-mode
 					viewmode=1;
-					console(screen, overlay, 8, "Isometric View mode selected", small_font);
+					console(guibits, 8, "Isometric View mode selected");
 					if(semislice)
-						console(screen, overlay, 8, "semislice ON", small_font);
+						console(guibits, 8, "semislice ON");
 					else
-						console(screen, overlay, 8, "semislice OFF", small_font);
+						console(guibits, 8, "semislice OFF");
 				break;
 				case 43: // Edit-Colours
 					editmode=0;
-					console(screen, overlay, 8, "Edit-mode COLOURS selected", small_font);
+					console(guibits, 8, "Edit-mode COLOURS selected");
 					if(semislice)
-						console(screen, overlay, 8, "shadowing OFF", small_font);
+						console(guibits, 8, "shadowing OFF");
 					else
-						console(screen, overlay, 8, "shadowing ON", small_font);
+						console(guibits, 8, "shadowing ON");
 				break;
 				case 44: // Edit-DFTILES
 					editmode=1;
-					console(screen, overlay, 8, "Edit-mode DF-TILES selected", small_font);
+					console(guibits, 8, "Edit-mode DF-TILES selected");
 				break;
 				case 45: // Toggle Console
 					showconsole=!showconsole;
@@ -2063,16 +2058,16 @@ int main(int argc, char *argv[])
 					if(viewmode==1)
 					{
 						if(semislice)
-							console(screen, overlay, 8, "semislice ON", small_font);
+							console(guibits, 8, "semislice ON");
 						else
-							console(screen, overlay, 8, "semislice OFF", small_font);
+							console(guibits, 8, "semislice OFF");
 					}
 					else
 					{
 						if(semislice)
-							console(screen, overlay, 8, "shadowing OFF", small_font);
+							console(guibits, 8, "shadowing OFF");
 						else
-							console(screen, overlay, 8, "shadowing ON", small_font);
+							console(guibits, 8, "shadowing ON");
 					}
 				break;
 				case 52:
@@ -2089,7 +2084,7 @@ int main(int argc, char *argv[])
 					}
 					if(copy)
 					{
-						colconsole(screen, overlay, 8, shft?"Shifting up one z-level...":"Copying from z-level below...", small_font, 96, 96, 96);
+						colconsole(guibits, 8, shft?"Shifting up one z-level...":"Copying from z-level below...", 96, 96, 96);
 						int x,y,z;
 						tile fill={TILE_ROCK,0};
 						for(z=shft?levels-2:zslice;z>=(shft?0:zslice);z--)
@@ -2104,11 +2099,11 @@ int main(int argc, char *argv[])
 						}
 						if(shft)
 							groundlevel++;
-						colconsole(screen, overlay, 20, "Done!", small_font, 32, 128, 32);
+						colconsole(guibits, 20, "Done!", 32, 128, 32);
 					}
 					else
 					{
-						colconsole(screen, overlay, 20, "Z-level copy cancelled.", small_font, 128, 104, 32);
+						colconsole(guibits, 20, "Z-level copy cancelled.", 128, 104, 32);
 					}
 				}
 				break;
@@ -2126,7 +2121,7 @@ int main(int argc, char *argv[])
 					}
 					if(copy)
 					{
-						colconsole(screen, overlay, 8, shft?"Shifting down one z-level...":"Copying from z-level above...", small_font, 96, 96, 96);
+						colconsole(guibits, 8, shft?"Shifting down one z-level...":"Copying from z-level above...", 96, 96, 96);
 						int x,y,z;
 						tile fill={0,0};
 						for(z=shft?1:zslice;z<(shft?levels:zslice+1);z++)
@@ -2141,17 +2136,17 @@ int main(int argc, char *argv[])
 						}
 						if(shft)
 							groundlevel--;
-						colconsole(screen, overlay, 20, "Done!", small_font, 32, 128, 32);
+						colconsole(guibits, 20, "Done!", 32, 128, 32);
 					}
 					else
 					{
-						colconsole(screen, overlay, 20, "Z-level copy cancelled.", small_font, 128, 104, 32);
+						colconsole(guibits, 20, "Z-level copy cancelled.", 128, 104, 32);
 					}
 				}
 				break;
 				case 55: // Count Materials
 				{
-					console(screen, overlay, 8, "Counting materials...", small_font);
+					console(guibits, 8, "Counting materials...");
 					int walls=0,floors=0,doors=0,stairs=0,beds=0,chairs=0,tables=0,statues=0;
 					int x,y,z;
 					for(z=0;z<levels;z++)
@@ -2186,9 +2181,9 @@ int main(int argc, char *argv[])
 					}
 					char string[100];
 					sprintf(string, " %u walls, %u floors, %u doors, %u stairs", walls, floors, doors, stairs);
-					colconsole(screen, overlay, 8, string, small_font, 255, 255, 255);
+					colconsole(guibits, 8, string, 255, 255, 255);
 					sprintf(string, " %u beds, %u chairs, %u tables, %u statues", beds, chairs, tables, statues);
-					colconsole(screen, overlay, 8, string, small_font, 255, 255, 255);
+					colconsole(guibits, 8, string, 255, 255, 255);
 				}
 				break;
 				case 56: // Ground to Zslice
@@ -2197,15 +2192,15 @@ int main(int argc, char *argv[])
 				case 57: // About
 				{
 					showconsole=true;
-					colconsole(screen, overlay, 20, "About DF Designer", small_font, 255, 255, 255);
+					colconsole(guibits, 20, "About DF Designer", 255, 255, 255);
 					char string[100];
 					sprintf(string, "Version %hhu.%hhu.%hhu", VERSION_MAJ, VERSION_MIN, VERSION_REV); // TODO: VERSION_GIT
-					colconsole(screen, overlay, 20, string, small_font, 127, 255, 127);
+					colconsole(guibits, 20, string, 127, 255, 127);
 					FILE *fp=fopen("init/credits", "r");
 					while(!feof(fp))
 					{
 						char *line=getl(fp);
-						colconsole(screen, overlay, 20, line, small_font, 127, 127, 255);
+						colconsole(guibits, 20, line, 127, 127, 255);
 						free(line);
 					}
 					fclose(fp);
@@ -2232,60 +2227,6 @@ int main(int argc, char *argv[])
 	TTF_CloseFont(big_font);
 	if(SDL_MUSTLOCK(screen))
 		SDL_UnlockSurface(screen);
-	return(0);
-}
-
-int console(SDL_Surface * screen, SDL_Surface * overlay, int delay, char * text, TTF_Font * font) // shortcut for a simple grey console entry
-{
-	return(colconsole(screen, overlay, delay, text, font, 192, 192, 192));
-}
-
-// Writes a message to the scrolly console, in the given colour
-int colconsole(SDL_Surface * screen, SDL_Surface * overlay, int delay, char * text, TTF_Font * font, unsigned char r, unsigned char g, unsigned char b)
-{
-	if(SDL_MUSTLOCK(overlay))
-		SDL_LockSurface(overlay);
-	dtext(overlay, 8, CONSOLE_HEIGHT, text, font, r, g, b);
-	SDL_Rect cls;
-	cls.x=0;
-	cls.y=OSIZ_Y-CONSOLE_HEIGHT;
-	cls.w=OSIZ_X;
-	cls.h=CONSOLE_HEIGHT+20;
-	if(showconsole)
-	{
-		int i,y;
-		for(i=0;i<16;i+=4)
-		{
-			for(y=0;y+4<CONSOLE_HEIGHT+20;y++)
-			{
-				memcpy((char *)overlay->pixels+(y*overlay->pitch), (char *)overlay->pixels+((y+4)*overlay->pitch), overlay->pitch);
-			}
-			if(delay)
-			{
-				SDL_BlitSurface(overlay, NULL, screen, &cls);
-				SDL_Flip(screen);
-				SDL_Delay(delay);
-			}
-		}
-		if(SDL_MUSTLOCK(overlay))
-			SDL_UnlockSurface(overlay);
-		SDL_BlitSurface(overlay, NULL, screen, &cls);
-		SDL_Flip(screen);
-	}
-	else
-	{
-		int y;
-		for(y=0;y<CONSOLE_HEIGHT;y++)
-		{
-			memcpy((char *)overlay->pixels+(y*overlay->pitch), (char *)overlay->pixels+((y+16)*overlay->pitch), overlay->pitch);
-		}
-		for(y=CONSOLE_HEIGHT;y<CONSOLE_HEIGHT+20;y++)
-		{
-			memset((char *)overlay->pixels+(y*overlay->pitch), 0, overlay->pitch);
-		}
-		if(SDL_MUSTLOCK(overlay))
-			SDL_UnlockSurface(overlay);
-	}
 	return(0);
 }
 
@@ -2492,13 +2433,13 @@ int load_map(char *filename, tile ****map, gui guibits, int *worldx, int *worldy
 	char string[100];
 	sprintf(string, "Loading from: %s...", filename);
 	fprintf(stderr, "%s\n", string);
-	console(guibits.screen, guibits.overlay, 20, string, guibits.small_font);
+	console(guibits, 20, string);
 	FILE * fp=fopen(filename, "r");
 	if(fp==NULL)
 	{
 		fprintf(stderr, "Couldn't open file for reading!\n");
 		perror("fopen");
-		colconsole(guibits.screen, guibits.overlay, 20, "Couldn't open file for reading!", guibits.small_font, 224, 192, 96);
+		colconsole(guibits, 20, "Couldn't open file for reading!", 224, 192, 96);
 	}
 	else
 	{
@@ -2508,7 +2449,7 @@ int load_map(char *filename, tile ****map, gui guibits, int *worldx, int *worldy
 		if(strncmp(id, "DFDM", 4)!=0)
 		{
 			fprintf(stderr, "File corrupted, or not a DFD Map!\n");
-			colconsole(guibits.screen, guibits.overlay, 20, "File corrupted, or not a DFD Map!", guibits.small_font, 224, 192, 96);
+			colconsole(guibits, 20, "File corrupted, or not a DFD Map!", 224, 192, 96);
 			ok=false;
 		}
 		else
@@ -2521,7 +2462,7 @@ int load_map(char *filename, tile ****map, gui guibits, int *worldx, int *worldy
 			if(vn!='\n')
 			{
 				fprintf(stderr, "File corrupted, or not a DFD Map!\n");
-				colconsole(guibits.screen, guibits.overlay, 20, "File corrupted, or not a DFD Map!", guibits.small_font, 224, 192, 96);
+				colconsole(guibits, 20, "File corrupted, or not a DFD Map!", 224, 192, 96);
 				ok=false;
 			}
 			else
@@ -2529,7 +2470,7 @@ int load_map(char *filename, tile ****map, gui guibits, int *worldx, int *worldy
 				char vermsg[32];
 				sprintf(vermsg, "  File is version %hhu.%hhu.%hhu", va, vb, vc);
 				fprintf(stderr, "%s\n", vermsg);
-				colconsole(guibits.screen, guibits.overlay, 20, vermsg, guibits.small_font, 96, 96, 96);
+				colconsole(guibits, 20, vermsg, 96, 96, 96);
 				int x,y,z;
 				for(z=0;z<*levels;z++)
 				{
@@ -2593,7 +2534,7 @@ int load_map(char *filename, tile ****map, gui guibits, int *worldx, int *worldy
 						if(nl!='\n')
 						{
 							fprintf(stderr, "File corrupted!  Map only partially loaded\n");
-							colconsole(guibits.screen, guibits.overlay, 20, "File corrupted!  Map only partially loaded", guibits.small_font, 224, 0, 0);
+							colconsole(guibits, 20, "File corrupted!  Map only partially loaded", 224, 0, 0);
 							ok=false;
 						}
 					}
@@ -2603,7 +2544,7 @@ int load_map(char *filename, tile ****map, gui guibits, int *worldx, int *worldy
 		fclose(fp);
 		if(ok)
 		{
-			colconsole(guibits.screen, guibits.overlay, 20, "Loaded successfully!", guibits.small_font, 96, 224, 96);
+			colconsole(guibits, 20, "Loaded successfully!", 96, 224, 96);
 			*zslice=*groundlevel;
 			view->x=max(0, (*worldx-64)/2);
 			view->y=max(0, (*worldy-64)/2);
@@ -2619,13 +2560,13 @@ int save_map(char *filename, tile ***map, gui guibits, int worldx, int worldy, i
 	char string[100];
 	sprintf(string, "Saving to: %s...", filename);
 	fprintf(stderr, "%s\n", string);
-	console(guibits.screen, guibits.overlay, 20, string, guibits.small_font);
+	console(guibits, 20, string);
 	FILE * fp=fopen(filename, "w");
 	if(fp==NULL)
 	{
 		fprintf(stderr, "Couldn't open file for writing!\n");
 		perror("fopen");
-		colconsole(guibits.screen, guibits.overlay, 20, "Couldn't open file for writing!", guibits.small_font, 224, 192, 96);
+		colconsole(guibits, 20, "Couldn't open file for writing!", 224, 192, 96);
 		return(2);
 	}
 	else
@@ -2646,7 +2587,7 @@ int save_map(char *filename, tile ***map, gui guibits, int worldx, int worldy, i
 			fputc('\n', fp);
 		}
 		fclose(fp);
-		colconsole(guibits.screen, guibits.overlay, 20, "Saved successfully!", guibits.small_font, 96, 224, 96);
+		colconsole(guibits, 20, "Saved successfully!", 96, 224, 96);
 	}
 	return(0);
 }
@@ -2660,13 +2601,13 @@ int export_map(char *filename, tile ***map, gui guibits, int worldx, int worldy,
 	else
 		sprintf(string, "Exporting to: %s...", filename);
 	fprintf(stderr, "%s\n", string);
-	console(guibits.screen, guibits.overlay, 20, string, guibits.small_font);
+	console(guibits, 20, string);
 	FILE * fp=fopen(filename, "w");
 	if(fp==NULL)
 	{
 		fprintf(stderr, "Couldn't open file for writing!\n");
 		perror("fopen");
-		colconsole(guibits.screen, guibits.overlay, 20, "Couldn't open file for writing!", guibits.small_font, 224, 192, 96);
+		colconsole(guibits, 20, "Couldn't open file for writing!", 224, 192, 96);
 		return(2);
 	}
 	else
@@ -2677,7 +2618,7 @@ int export_map(char *filename, tile ***map, gui guibits, int worldx, int worldy,
 				fprintf(fp, "#build Generated by DF Designer %hhu.%hhu.%hhu\n", VERSION_MAJ, VERSION_MIN, VERSION_REV);
 			else
 			{
-				colconsole(guibits.screen, guibits.overlay, 20, "yxport: Underground exports not done yet!  Sorry", guibits.small_font, 224, 160, 96);
+				colconsole(guibits, 20, "yxport: Underground exports not done yet!  Sorry", 224, 160, 96);
 				fclose(fp);
 				return(4);
 			}
@@ -2799,7 +2740,7 @@ int export_map(char *filename, tile ***map, gui guibits, int worldx, int worldy,
 									break;
 									default:
 										fprintf(stderr, "yxport: A staircase could not be properly deduced\n");
-										colconsole(guibits.screen, guibits.overlay, 20, "yxport: A staircase could not be properly deduced", guibits.small_font, 160, 160, 128);
+										colconsole(guibits, 20, "yxport: A staircase could not be properly deduced", 160, 160, 128);
 										qfbuild="Cx";
 									break;
 								}
@@ -2829,14 +2770,14 @@ int export_map(char *filename, tile ***map, gui guibits, int worldx, int worldy,
 										if(!hitstock)
 										{
 											fprintf(stderr, "yxport: stockpiles not yet supported (ignored)\n");
-											colconsole(guibits.screen, guibits.overlay, 20, "yxport: stockpiles not yet supported (ignored)", guibits.small_font, 160, 160, 128);
+											colconsole(guibits, 20, "yxport: stockpiles not yet supported (ignored)", 160, 160, 128);
 										}
 										hitstock=true;
 									break;
 									default:
 										qfbuild="`";
 										fprintf(stderr, "yxport: unrecognised object %d (ignored)\n", map[zslice][x][y].object);
-										colconsole(guibits.screen, guibits.overlay, 20, "yxport: unrecognised object (ignored)", guibits.small_font, 160, 160, 128);
+										colconsole(guibits, 20, "yxport: unrecognised object (ignored)", 160, 160, 128);
 									break;
 								}
 							}
@@ -2867,9 +2808,9 @@ int export_map(char *filename, tile ***map, gui guibits, int worldx, int worldy,
 		}
 		fclose(fp);
 		if(qf)
-			colconsole(guibits.screen, guibits.overlay, 20, "yxport: Exported successfully!", guibits.small_font, 96, 32, 96);
+			colconsole(guibits, 20, "yxport: Exported successfully!", 96, 32, 96);
 		else
-			colconsole(guibits.screen, guibits.overlay, 20, "Exported successfully!", guibits.small_font, 96, 32, 96);
+			colconsole(guibits, 20, "Exported successfully!", 96, 32, 96);
 	}
 	return(0);
 }
