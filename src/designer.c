@@ -88,7 +88,7 @@ bool showconsole=true;
 
 // TODO: bud these off into appropriate lib files
 int console(SDL_Surface * screen, SDL_Surface * overlay, int delay, char * text, TTF_Font * font); // draw
-int colconsole(SDL_Surface * screen, SDL_Surface * overlay, int delay, char * text, TTF_Font * font, char r, char g, char b); // draw
+int colconsole(SDL_Surface * screen, SDL_Surface * overlay, int delay, char * text, TTF_Font * font, unsigned char r, unsigned char g, unsigned char b); // draw
 disp_tile tchar(tile ***map, int x, int y, int z, int worldx, int worldy, int groundlevel); // map
 int load_map(char *filename, tile ****map, gui guibits, int *worldx, int *worldy, int *levels, int *groundlevel, int *zslice, int *uslice, pos *view, pos *dview); // map
 int save_map(char *filename, tile ***map, gui guibits, int worldx, int worldy, int levels, int groundlevel); // map
@@ -2241,7 +2241,7 @@ int console(SDL_Surface * screen, SDL_Surface * overlay, int delay, char * text,
 }
 
 // Writes a message to the scrolly console, in the given colour
-int colconsole(SDL_Surface * screen, SDL_Surface * overlay, int delay, char * text, TTF_Font * font, char r, char g, char b)
+int colconsole(SDL_Surface * screen, SDL_Surface * overlay, int delay, char * text, TTF_Font * font, unsigned char r, unsigned char g, unsigned char b)
 {
 	if(SDL_MUSTLOCK(overlay))
 		SDL_LockSurface(overlay);
@@ -2258,7 +2258,7 @@ int colconsole(SDL_Surface * screen, SDL_Surface * overlay, int delay, char * te
 		{
 			for(y=0;y+4<CONSOLE_HEIGHT+20;y++)
 			{
-				memcpy(overlay->pixels+(y*overlay->pitch), overlay->pixels+((y+4)*overlay->pitch), overlay->pitch);
+				memcpy((char *)overlay->pixels+(y*overlay->pitch), (char *)overlay->pixels+((y+4)*overlay->pitch), overlay->pitch);
 			}
 			if(delay)
 			{
@@ -2277,11 +2277,11 @@ int colconsole(SDL_Surface * screen, SDL_Surface * overlay, int delay, char * te
 		int y;
 		for(y=0;y<CONSOLE_HEIGHT;y++)
 		{
-			memcpy(overlay->pixels+(y*overlay->pitch), overlay->pixels+((y+16)*overlay->pitch), overlay->pitch);
+			memcpy((char *)overlay->pixels+(y*overlay->pitch), (char *)overlay->pixels+((y+16)*overlay->pitch), overlay->pitch);
 		}
 		for(y=CONSOLE_HEIGHT;y<CONSOLE_HEIGHT+20;y++)
 		{
-			memset(overlay->pixels+(y*overlay->pitch), 0, overlay->pitch);
+			memset((char *)overlay->pixels+(y*overlay->pitch), 0, overlay->pitch);
 		}
 		if(SDL_MUSTLOCK(overlay))
 			SDL_UnlockSurface(overlay);
@@ -2540,9 +2540,9 @@ int load_map(char *filename, tile ****map, gui guibits, int *worldx, int *worldy
 					free((*map)[z]);
 				}
 				if((va>0) || (vb>=9))
-					fscanf(fp, "%u,%u,%u,%u\n", levels, worldx, worldy, groundlevel);
+					fscanf(fp, "%d,%d,%d,%d\n", levels, worldx, worldy, groundlevel);
 				else
-					fscanf(fp, "%u,%u,%u\n", levels, worldx, worldy);
+					fscanf(fp, "%d,%d,%d\n", levels, worldx, worldy);
 				*uslice=max(*groundlevel-1, 0);
 				(*map) = (tile ***)realloc((*map), *levels*sizeof(tile **));
 				if((*map)==NULL)

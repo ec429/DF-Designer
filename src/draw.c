@@ -35,10 +35,9 @@ int pset(SDL_Surface * screen, int x, int y, unsigned char r, unsigned char g, u
 {
 	if((0<=x) && (x<screen->w) && (0<=y) && (y<screen->h))
 	{
-		long int s_off = ((y * OSIZ_X) + x) * 4;
-		unsigned long int pixval = SDL_MapRGB(screen->format, r, g, b),
-			* pixloc = screen->pixels + s_off;
-		*pixloc = pixval;
+		unsigned long int pixval = SDL_MapRGB(screen->format, r, g, b);
+		unsigned char *pixloc = (unsigned char *)screen->pixels + y*screen->pitch + x*screen->format->BytesPerPixel;
+		*(unsigned long int *)pixloc = pixval;
 		return(0);
 	}
 	return(1);
@@ -121,7 +120,7 @@ int dtext(SDL_Surface * scrn, int x, int y, char * text, TTF_Font * font, unsign
 	return(0);
 }
 
-int dmenu(SDL_Surface * screen, int x, int y, int items, int pressed, int hover, char ** text, TTF_Font * font, SDL_Surface * button_u, SDL_Surface * button_p, unsigned char r, unsigned char g, unsigned char b, char hr, char hg, char hb)
+int dmenu(SDL_Surface * screen, int x, int y, int items, int pressed, int hover, char ** text, TTF_Font * font, SDL_Surface * button_u, SDL_Surface * button_p, unsigned char r, unsigned char g, unsigned char b, unsigned char hr, unsigned char hg, unsigned char hb)
 {
 	int i;
 	for(i=0;i<items;i++)

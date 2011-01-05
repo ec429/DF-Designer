@@ -41,7 +41,7 @@ SDL_Surface * gf_init(int x, int y);
 int pset(SDL_Surface * screen, int x, int y, unsigned char r, unsigned char g, unsigned char b);
 int line(SDL_Surface * screen, int x1, int y1, int x2, int y2, unsigned char r, unsigned char g, unsigned char b);
 int dtext(SDL_Surface * scrn, int x, int y, char * text, TTF_Font * font, unsigned char r, unsigned char g, unsigned char b);
-int dmenu(SDL_Surface * screen, int x, int y, int items, int pressed, int hover, char ** text, TTF_Font * font, SDL_Surface * button_u, SDL_Surface * button_p, unsigned char r, unsigned char g, unsigned char b, char hr, char hg, char hb);
+int dmenu(SDL_Surface * screen, int x, int y, int items, int pressed, int hover, char ** text, TTF_Font * font, SDL_Surface * button_u, SDL_Surface * button_p, unsigned char r, unsigned char g, unsigned char b, unsigned char hr, unsigned char hg, unsigned char hb);
 int dcounter(gui guibits, int x, int y, double val, char what);
 
 cparms cuboid(int dx, int dy, int dz, double theta, double phi); // WARNING!  gf_init must be called first, as it sets c3 (=sqrt(3)/2.0)

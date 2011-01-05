@@ -4,7 +4,7 @@
 
 #include "dialogs.h"
 
-int okbox(SDL_Surface * screen, SDL_Surface * boximage, char ** boxtext, int boxtextlines, SDL_Surface * button_u, SDL_Surface * button_p, TTF_Font * font, TTF_Font * buttonfont, char * buttontext, char r, char g, char b, char br, char bg, char bb)
+int okbox(SDL_Surface * screen, SDL_Surface * boximage, char ** boxtext, unsigned int boxtextlines, SDL_Surface * button_u, SDL_Surface * button_p, TTF_Font * font, TTF_Font * buttonfont, char * buttontext, unsigned char r, unsigned char g, unsigned char b, unsigned char br, unsigned char bg, unsigned char bb)
 {
 	pos mouse;
 	char button;
@@ -100,7 +100,7 @@ int okbox(SDL_Surface * screen, SDL_Surface * boximage, char ** boxtext, int box
 	return(0);
 }
 
-bool ynbox(SDL_Surface * screen, SDL_Surface * boximage, char ** boxtext, int boxtextlines, SDL_Surface * button_u, SDL_Surface * button_p, TTF_Font * font, TTF_Font * buttonfont, char * ytext, char * ntext, bool def, char r, char g, char b, char br, char bg, char bb)
+bool ynbox(SDL_Surface * screen, SDL_Surface * boximage, char ** boxtext, unsigned int boxtextlines, SDL_Surface * button_u, SDL_Surface * button_p, TTF_Font * font, TTF_Font * buttonfont, char * ytext, char * ntext, bool def, unsigned char r, unsigned char g, unsigned char b, unsigned char br, unsigned char bg, unsigned char bb)
 {
 	pos mouse;
 	char button;
@@ -232,7 +232,7 @@ bool ynbox(SDL_Surface * screen, SDL_Surface * boximage, char ** boxtext, int bo
 	return(ypressed);
 }
 
-char * textentry(SDL_Surface * screen, SDL_Surface * boximage, char ** boxtext, int boxtextlines, TTF_Font * font, char r, char g, char b)
+char * textentry(SDL_Surface * screen, SDL_Surface * boximage, char ** boxtext, unsigned int boxtextlines, TTF_Font * font, unsigned char r, unsigned char g, unsigned char b)
 {
 	SDL_EnableUNICODE(1);
 	char * inputtext=(char *)malloc(30);
