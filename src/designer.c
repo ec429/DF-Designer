@@ -39,9 +39,6 @@ menuitem;
 
 #define MI_FLAG_DISABLED	1
 
-// TODO: bud these off into appropriate lib files
-char * getl(FILE *); // bits
-
 int main(int argc, char *argv[])
 {
 	// Set up DF & setting vars
@@ -100,7 +97,7 @@ int main(int argc, char *argv[])
 	}
 	else
 	{
-		int e=clear_map(map, true, worldx, worldy, levels, groundlevel);
+		int e=clear_map(map, true);
 		if(e==2)
 			return(2);
 	}
@@ -435,7 +432,7 @@ int main(int argc, char *argv[])
 	// If a filename was given on the cmdline, load it now
 	if(lfn!=NULL)
 	{
-		int e=load_map(lfn, &map, guibits, &worldx, &worldy, &levels, &groundlevel, &zslice, &uslice, &view, &dview);
+		int e=load_map(lfn, &map, guibits, &zslice, &uslice, &view, &dview);
 		if(e==2)
 			return(2);
 	}
@@ -930,7 +927,7 @@ int main(int argc, char *argv[])
 									}
 									else
 									{
-										disp_tile xtile = tchar(map, x+view.x, y+view.y, zslice, worldx, worldy, groundlevel);
+										disp_tile xtile = tchar(map, x+view.x, y+view.y, zslice);
 										SDL_FillRect(screen, &maptile, SDL_MapRGB(screen->format, xtile.br, xtile.bg, xtile.bb));
 										SDL_Rect itile;
 										itile.x=8*(xtile.v%16);
@@ -1837,7 +1834,7 @@ int main(int argc, char *argv[])
 					}
 					if(clear)
 					{
-						int e=clear_map(map, false, worldx, worldy, levels, groundlevel);
+						int e=clear_map(map, false);
 						if(e==2)
 							return(2);
 					}
@@ -1861,7 +1858,7 @@ int main(int argc, char *argv[])
 						}
 						else
 						{
-							int e=load_map(filename, &map, guibits, &worldx, &worldy, &levels, &groundlevel, &zslice, &uslice, &view, &dview);
+							int e=load_map(filename, &map, guibits, &zslice, &uslice, &view, &dview);
 							if(e==2)
 								return(2);
 						}
@@ -1879,7 +1876,7 @@ int main(int argc, char *argv[])
 					}
 					else
 					{
-						save_map(filename, map, guibits, worldx, worldy, levels, groundlevel);
+						save_map(filename, map, guibits);
 					}
 					free(filename);
 				}
@@ -1894,7 +1891,7 @@ int main(int argc, char *argv[])
 					}
 					else
 					{
-						export_map(filename, map, guibits, worldx, worldy, levels, groundlevel, false);
+						export_map(filename, map, guibits, false);
 					}
 					free(filename);
 				}
@@ -1912,7 +1909,7 @@ int main(int argc, char *argv[])
 						char csvfile[strlen(filename)+5];
 						sprintf(csvfile, "%s.csv", filename);
 						free(filename);
-						export_map(csvfile, map, guibits, worldx, worldy, zslice, groundlevel, true);
+						export_map(csvfile, map, guibits, true);
 					}
 				}
 				break;
@@ -2182,38 +2179,4 @@ int main(int argc, char *argv[])
 	if(SDL_MUSTLOCK(screen))
 		SDL_UnlockSurface(screen);
 	return(0);
-}
-
-char * getl(FILE *fp)
-{
-	// gets a line of string data, {re}alloc()ing as it goes, so you don't need to make a buffer for it, nor must thee fret thyself about overruns!
-	char * lout = (char *)malloc(81);
-	int i=0;
-	signed int c;
-	while(!feof(fp))
-	{
-		c=fgetc(fp);
-		if((c==10)||(c==EOF))
-			break;
-		if(c!=0)
-		{
-			lout[i++]=c;
-			if((i%80)==0)
-			{
-				if((lout=(char *)realloc(lout, i+81))==NULL)
-				{
-					printf("\nNot enough memory to store input!\n");
-					free(lout);
-					return(NULL);
-				}
-			}
-		}
-	}
-	lout[i]=0;
-	char *nlout=(char *)realloc(lout, i+1);
-	if(nlout==NULL)
-	{
-		return(lout); // it doesn't really matter (assuming realloc is a decent implementation and hasn't nuked the original pointer), we'll just have to temporarily waste a bit of memory
-	}
-	return(nlout);
 }

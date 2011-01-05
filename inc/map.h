@@ -8,9 +8,6 @@
 #include "bits.h"
 #include "version.h"
 
-#define max(a,b)	((a)>(b)?(a):(b))
-#define min(a,b)	((a)<(b)?(a):(b))
-
 // Basic map tile unit
 typedef struct
 {
@@ -28,11 +25,11 @@ typedef struct
 }
 disp_tile;
 
-disp_tile tchar(tile ***map, int x, int y, int z, int worldx, int worldy, int groundlevel); // Tile preprocessor, produces an ASCII/DF-TILE
-int load_map(char *filename, tile ****map, gui guibits, int *worldx, int *worldy, int *levels, int *groundlevel, int *zslice, int *uslice, pos *view, pos *dview);
-int save_map(char *filename, tile ***map, gui guibits, int worldx, int worldy, int levels, int groundlevel);
-int export_map(char *filename, tile ***map, gui guibits, int worldx, int worldy, int levels, int groundlevel, bool qf);
-int clear_map(tile ***map, bool alloc, int worldx, int worldy, int levels, int groundlevel);
+disp_tile tchar(tile ***map, int x, int y, int z); // Tile preprocessor, produces an ASCII/DF-TILE
+int load_map(char *filename, tile ****map, gui guibits, int *zslice, int *uslice, pos *view, pos *dview);
+int save_map(char *filename, tile ***map, gui guibits);
+int export_map(char *filename, tile ***map, gui guibits, bool qf);
+int clear_map(tile ***map, bool alloc);
 
 int levels;
 int groundlevel;

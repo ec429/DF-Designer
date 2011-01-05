@@ -6,6 +6,8 @@
 #include <stdlib.h>
 #include "draw.h"
 
+// TODO: use guibits for these
+
 int okbox(SDL_Surface * screen, SDL_Surface * boximage, char ** boxtext, unsigned int boxtextlines, SDL_Surface * button_u, SDL_Surface * button_p, TTF_Font * font, TTF_Font * buttonfont, char * buttontext, unsigned char r, unsigned char g, unsigned char b, unsigned char br, unsigned char bg, unsigned char bb);
 
 bool ynbox(SDL_Surface * screen, SDL_Surface * boximage, char ** boxtext, unsigned int boxtextlines, SDL_Surface * button_u, SDL_Surface * button_p, TTF_Font * font, TTF_Font * buttonfont, char * ytext, char * ntext, bool def, unsigned char r, unsigned char g, unsigned char b, unsigned char br, unsigned char bg, unsigned char bb);

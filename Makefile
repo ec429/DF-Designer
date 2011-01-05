@@ -1,5 +1,5 @@
 CC := gcc
-CFLAGS := -Wall -Wextra -pedantic -std=gnu99
+CFLAGS := -Wall -Wextra -Werror -pedantic -std=gnu99
 SDL := `sdl-config --cflags --libs` -lSDL_image -lSDL_ttf
 BINDIR := bin/
 SRCDIR := src/

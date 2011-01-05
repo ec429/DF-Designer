@@ -22,7 +22,7 @@ int okbox(SDL_Surface * screen, SDL_Surface * boximage, char ** boxtext, unsigne
 		SDL_Flip(screen);
 		SDL_FillRect(screen, &cls, SDL_MapRGB(screen->format, 0, 0, 0));
 		SDL_BlitSurface(boximage, NULL, screen, &cls);
-		int y;
+		unsigned int y;
 		for(y=0;y<boxtextlines;y++)
 		{
 			dtext(screen, cls.x+32, cls.y+32+(12*y), boxtext[y], font, r, g, b);
@@ -118,7 +118,7 @@ bool ynbox(SDL_Surface * screen, SDL_Surface * boximage, char ** boxtext, unsign
 		SDL_Flip(screen);
 		SDL_FillRect(screen, &cls, SDL_MapRGB(screen->format, 0, 0, 0));
 		SDL_BlitSurface(boximage, NULL, screen, &cls);
-		int y;
+		unsigned int y;
 		for(y=0;y<boxtextlines;y++)
 		{
 			dtext(screen, cls.x+32, cls.y+32+(12*y), boxtext[y], font, r, g, b);
@@ -251,7 +251,7 @@ char * textentry(SDL_Surface * screen, SDL_Surface * boximage, char ** boxtext, 
 	{
 		SDL_FillRect(screen, &cls, SDL_MapRGB(screen->format, 0, 0, 0));
 		SDL_BlitSurface(boximage, NULL, screen, &cls);
-		int y;
+		unsigned int y;
 		for(y=0;y<boxtextlines;y++)
 		{
 			dtext(screen, cls.x+32, cls.y+32+(12*y), boxtext[y], font, r, g, b);

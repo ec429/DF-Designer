@@ -7,7 +7,7 @@
 // Useful tile definitions (blank and error)
 disp_tile wb={' ', 255, 255, 255, 0, 0, 0}, err={'!', 255, 0, 0, 0, 0, 192};
 
-disp_tile tchar(tile ***map, int x, int y, int z, int worldx, int worldy, int groundlevel)
+disp_tile tchar(tile ***map, int x, int y, int z)
 {
 	disp_tile ret=wb;
 	if(map[z][x][y].data&TILE_OBJECT)
@@ -204,7 +204,7 @@ disp_tile tchar(tile ***map, int x, int y, int z, int worldx, int worldy, int gr
 	return(ret);
 }
 
-int load_map(char *filename, tile ****map, gui guibits, int *worldx, int *worldy, int *levels, int *groundlevel, int *zslice, int *uslice, pos *view, pos *dview)
+int load_map(char *filename, tile ****map, gui guibits, int *zslice, int *uslice, pos *view, pos *dview)
 {
 	char string[100];
 	sprintf(string, "Loading from: %s...", filename);
@@ -248,20 +248,20 @@ int load_map(char *filename, tile ****map, gui guibits, int *worldx, int *worldy
 				fprintf(stderr, "%s\n", vermsg);
 				colconsole(guibits, 20, vermsg, 96, 96, 96);
 				int x,y,z;
-				for(z=0;z<*levels;z++)
+				for(z=0;z<levels;z++)
 				{
-					for(x=0;x<*worldx;x++)
+					for(x=0;x<worldx;x++)
 					{
 						free((*map)[z][x]);
 					}
 					free((*map)[z]);
 				}
 				if((va>0) || (vb>=9))
-					fscanf(fp, "%d,%d,%d,%d\n", levels, worldx, worldy, groundlevel);
+					fscanf(fp, "%d,%d,%d,%d\n", &levels, &worldx, &worldy, &groundlevel);
 				else
-					fscanf(fp, "%d,%d,%d\n", levels, worldx, worldy);
-				*uslice=max(*groundlevel-1, 0);
-				(*map) = (tile ***)realloc((*map), *levels*sizeof(tile **));
+					fscanf(fp, "%d,%d,%d\n", &levels, &worldx, &worldy);
+				*uslice=max(groundlevel-1, 0);
+				(*map) = (tile ***)realloc((*map), levels*sizeof(tile **));
 				if((*map)==NULL)
 				{
 					fprintf(stderr, "Memory exhausted.\n");
@@ -271,17 +271,17 @@ int load_map(char *filename, tile ****map, gui guibits, int *worldx, int *worldy
 				}
 				else
 				{
-					for(z=0;z<*levels;z++)
+					for(z=0;z<levels;z++)
 					{
-						(*map)[z] = (tile **)malloc(*worldx*sizeof(tile *));
+						(*map)[z] = (tile **)malloc(worldx*sizeof(tile *));
 						if((*map)[z]==NULL)
 						{
 							fprintf(stderr, "Not enough mem / couldn't alloc!\n");
 							return(2);
 						}
-						for(x=0;x<*worldx;x++)
+						for(x=0;x<worldx;x++)
 						{
-							(*map)[z][x] = (tile *)malloc(*worldy*sizeof(tile));
+							(*map)[z][x] = (tile *)malloc(worldy*sizeof(tile));
 							if((*map)[z][x]==NULL)
 							{
 								fprintf(stderr, "Not enough mem / couldn't alloc!\n");
@@ -290,11 +290,11 @@ int load_map(char *filename, tile ****map, gui guibits, int *worldx, int *worldy
 						}
 					}
 				}
-				for(z=0;z<*levels;z++)
+				for(z=0;z<levels;z++)
 				{
-					for(y=0;y<*worldy;y++)
+					for(y=0;y<worldy;y++)
 					{
-						for(x=0;x<*worldx;x++)
+						for(x=0;x<worldx;x++)
 						{
 							if(feof(fp))
 								ok=false;
@@ -321,9 +321,9 @@ int load_map(char *filename, tile ****map, gui guibits, int *worldx, int *worldy
 		if(ok)
 		{
 			colconsole(guibits, 20, "Loaded successfully!", 96, 224, 96);
-			*zslice=*groundlevel;
-			view->x=max(0, (*worldx-64)/2);
-			view->y=max(0, (*worldy-64)/2);
+			*zslice=groundlevel;
+			view->x=max(0, (worldx-64)/2);
+			view->y=max(0, (worldy-64)/2);
 			dview->x=dview->y=0;
 			return(0);
 		}
@@ -331,7 +331,7 @@ int load_map(char *filename, tile ****map, gui guibits, int *worldx, int *worldy
 	return(1);
 }
 
-int save_map(char *filename, tile ***map, gui guibits, int worldx, int worldy, int levels, int groundlevel)
+int save_map(char *filename, tile ***map, gui guibits)
 {
 	char string[100];
 	sprintf(string, "Saving to: %s...", filename);
@@ -368,7 +368,7 @@ int save_map(char *filename, tile ***map, gui guibits, int worldx, int worldy, i
 	return(0);
 }
 
-int export_map(char *filename, tile ***map, gui guibits, int worldx, int worldy, int levels, int groundlevel, bool qf)
+int export_map(char *filename, tile ***map, gui guibits, bool qf)
 {
 	int zslice=levels; // if qf==true then we store zslice in levels else we don't need zslice
 	char string[100];
@@ -502,7 +502,7 @@ int export_map(char *filename, tile ***map, gui guibits, int worldx, int worldy,
 							}
 							else if(here&TILE_STAIRS)
 							{
-								disp_tile xtile = tchar(map, x, y, zslice, worldx, worldy, groundlevel);
+								disp_tile xtile = tchar(map, x, y, zslice);
 								switch(xtile.v)
 								{
 									case '>':
@@ -565,7 +565,7 @@ int export_map(char *filename, tile ***map, gui guibits, int worldx, int worldy,
 						}
 						else
 						{
-							disp_tile xtile = tchar(map, x, y, z, worldx, worldy, groundlevel);
+							disp_tile xtile = tchar(map, x, y, z);
 							if(xtile.v>127)
 								fprintf(fp, "%s", xatiles[xtile.v-128]);
 							else
@@ -591,7 +591,7 @@ int export_map(char *filename, tile ***map, gui guibits, int worldx, int worldy,
 	return(0);
 }
 
-int clear_map(tile ***map, bool alloc, int worldx, int worldy, int levels, int groundlevel)
+int clear_map(tile ***map, bool alloc)
 {
 	int x,y,z;
 	for(z=0;z<levels;z++)
