@@ -4,7 +4,7 @@
 #pragma once
 #include <stdbool.h>
 #include <stdlib.h>
-#include "../inc/draw.h"
+#include "draw.h"
 
 int okbox(SDL_Surface * screen, SDL_Surface * boximage, char ** boxtext, unsigned int boxtextlines, SDL_Surface * button_u, SDL_Surface * button_p, TTF_Font * font, TTF_Font * buttonfont, char * buttontext, unsigned char r, unsigned char g, unsigned char b, unsigned char br, unsigned char bg, unsigned char bb);
 
