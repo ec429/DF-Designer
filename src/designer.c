@@ -418,6 +418,8 @@ int main(int argc, char *argv[])
 	char lastkey='r';
 	int lastx,lasty;
 	int lastr=0;
+	double lastglow=0;
+	int lasts=0;
 	double ctrx=0, ctry=0;
 	pos lastview;
 	cls.x=0;
@@ -1305,6 +1307,37 @@ int main(int argc, char *argv[])
 			SDL_BlitSurface(menubtn[tooli][toolj], NULL, screen, &loc);
 		}
 		
+		// Show current display mode
+		int dmi=0,dmj=0;
+		switch(viewmode)
+		{
+			case 0:
+				dmi=4;
+				switch(editmode)
+				{
+					case 0:
+						dmj=3;
+					break;
+					case 1:
+						dmj=4;
+					break;
+					default:
+						dmj=1;
+					break;
+				}
+			break;
+			case 1:
+				dmi=4;dmj=2;
+			break;
+		}
+		if(dmi)
+		{
+			SDL_Rect loc;
+			loc.x=348;
+			loc.y=584;
+			SDL_BlitSurface(menubtn[dmi][dmj], NULL, screen, &loc);
+		}
+		
 		// indicate current co-ordinates
 		int posx=((mouse.x-280)/8)+view.x;
 		int posy=((mouse.y-8)/8)+view.y;
@@ -1327,6 +1360,24 @@ int main(int argc, char *argv[])
 			SDL_FillRect(screen, &ctr, SDL_MapRGB(screen->format, 0, 0, 0));
 		}
 		dcounter(guibits, 400, 616, max(zslice+.001, 0), 'Z');
+		
+		if(lastr)
+		{
+			lastglow--;
+			if(lastglow<-21) lastglow=-1;
+			unsigned char br=floor(191+64*sin(lastglow*M_PI/10));
+			dtext(screen, 464, 584, "Filling rect", big_font, br, 0, 0);
+		}
+		else
+		{
+			lastglow*=.96;
+			if(lastglow<0) lastglow=1;
+			else if(lastglow)
+			{
+				if(lastglow<0.03) lastglow=0;
+				dtext(screen, 464, 584, lasts?"Cancelled fill":"Filled rect", big_font, lasts?lastglow*255:0, lastglow*255, 0);
+			}
+		}
 		
 		// apply console overlay
 		if(showconsole)
@@ -1506,7 +1557,7 @@ int main(int argc, char *argv[])
 						}
 						if(key.sym==SDLK_v)
 						{
-							menu=4;mdo=viewmode?1:2;
+							viewmode^=1;
 						}
 						if(key.sym==SDLK_h)
 						{
@@ -1534,9 +1585,9 @@ int main(int argc, char *argv[])
 							console(guibits, 0, "c     --COLOURS");
 							console(guibits, 0, "x     --DF-TILES");
 							console(guibits, 0, "i     Isometric mode");
+							console(guibits, 0, "v     Mode toggle");
 							console(guibits, 0, "[]     Rotate horizontal");
 							console(guibits, 0, "{}   Rotate vertical");
-							console(guibits, 0, "v     Mode toggle");
 							//console(guibits, 8, "");
 						}
 						if((key.sym==SDLK_SEMICOLON) && !(key.mod & (KMOD_LSHIFT | KMOD_RSHIFT)))
@@ -1594,8 +1645,6 @@ int main(int argc, char *argv[])
 					if(event.key.type==SDL_KEYUP)
 					{
 						SDL_keysym key=event.key.keysym;
-						if((key.sym==SDLK_r) || (key.sym==SDLK_w) || (key.sym==SDLK_f) || (key.sym==SDLK_g) || (key.sym==SDLK_t) || (key.sym==SDLK_d) || (key.sym==SDLK_o) || (key.sym==SDLK_SPACE))
-							keyactive=false;
 						if(key.sym==SDLK_LEFT)
 							dview.x=max(dview.x, 0);
 						if(key.sym==SDLK_RIGHT)
@@ -1617,7 +1666,6 @@ int main(int argc, char *argv[])
 					mouse.y=event.button.y;
 					button=event.button.button;
 					drag|=button;
-					SDL_Event makekey;
 					switch(button)
 					{
 						case SDL_BUTTON_LEFT:
@@ -1690,8 +1738,10 @@ int main(int argc, char *argv[])
 								}
 							}
 							if(lastr)
-								colconsole(guibits, 8, " Cancelled fill.", 64, 144, 64);
-							lastr=0;
+							{
+								lasts=1;
+								lastr=0;
+							}
 						break;
 						case SDL_BUTTON_RIGHT:
 							if(lastr==0)
@@ -1699,7 +1749,6 @@ int main(int argc, char *argv[])
 								lastx=mouse.x;
 								lasty=mouse.y;
 								lastview=view;
-								colconsole(guibits, 8, " Filling rectangle!", 192, 144, 96);
 								if((mouse.x>=280) && (mouse.x<792) && (mouse.y>=8) && (mouse.y<=520))
 								{
 									if(viewmode==0)
@@ -1760,7 +1809,9 @@ int main(int argc, char *argv[])
 								}
 							}
 							else
-								colconsole(guibits, 8, " Filled rectangle.", 144, 224, 96);
+							{
+								lasts=0;
+							}
 							lastr++;
 						break;
 						case SDL_BUTTON_WHEELUP:
@@ -1777,10 +1828,6 @@ int main(int argc, char *argv[])
 					switch(button)
 					{
 						case SDL_BUTTON_LEFT:
-							makekey.type=SDL_KEYUP;
-							makekey.key.type=SDL_KEYUP;
-							makekey.key.keysym.sym=lastkey;
-							SDL_PushEvent(&makekey);
 							if((mouse.x>=300) && (mouse.x<780) && (mouse.y>=528) && (mouse.y<576))
 							{
 								int which=((mouse.x-252)/48)%10;
@@ -1805,10 +1852,7 @@ int main(int argc, char *argv[])
 							keyactive=false;
 						break;
 						case SDL_BUTTON_RIGHT:
-							makekey.type=SDL_KEYUP;
-							makekey.key.type=SDL_KEYUP;
-							makekey.key.keysym.sym=lastkey;
-							SDL_PushEvent(&makekey);
+							keyactive=false;
 						break;
 						case SDL_BUTTON_WHEELUP:
 						break;
@@ -1963,43 +2007,15 @@ int main(int argc, char *argv[])
 				break;
 				case 41: // Edit-mode
 					viewmode=0;
-					console(guibits, 8, "Editing mode selected");
-					switch(editmode)
-					{
-						case 0:
-							console(guibits, 8, "Edit-mode COLOURS selected");
-							if(semislice)
-								console(guibits, 8, "shadowing OFF");
-							else
-								console(guibits, 8, "shadowing ON");
-						break;
-						case 1:
-							console(guibits, 8, "Edit-mode DF-TILES selected");
-						break;
-						default:
-							console(guibits, 8, "Don't know what edit-mode this is... error!");
-						break;
-					}
 				break;
 				case 42: // Iso/3D-mode
 					viewmode=1;
-					console(guibits, 8, "Isometric View mode selected");
-					if(semislice)
-						console(guibits, 8, "semislice ON");
-					else
-						console(guibits, 8, "semislice OFF");
 				break;
 				case 43: // Edit-Colours
 					editmode=0;
-					console(guibits, 8, "Edit-mode COLOURS selected");
-					if(semislice)
-						console(guibits, 8, "shadowing OFF");
-					else
-						console(guibits, 8, "shadowing ON");
 				break;
 				case 44: // Edit-DFTILES
 					editmode=1;
-					console(guibits, 8, "Edit-mode DF-TILES selected");
 				break;
 				case 45: // Toggle Console
 					showconsole=!showconsole;
@@ -2145,20 +2161,32 @@ int main(int argc, char *argv[])
 					showconsole=true;
 					colconsole(guibits, 20, "About DF Designer", 255, 255, 255);
 					char string[100];
-					sprintf(string, "Version %hhu.%hhu.%hhu", VERSION_MAJ, VERSION_MIN, VERSION_REV); // TODO: VERSION_GIT
+					sprintf(string, "Version %hhu.%hhu.%hhu%s%s", VERSION_MAJ, VERSION_MIN, VERSION_REV, VERSION_GIT[0]?"-":"", VERSION_GIT);
 					colconsole(guibits, 20, string, 127, 255, 127);
 					FILE *fp=fopen("init/credits", "r");
-					while(!feof(fp))
+					if(fp)
 					{
-						char *line=getl(fp);
-						colconsole(guibits, 20, line, 127, 127, 255);
-						free(line);
+						while(!feof(fp))
+						{
+							char *line=getl(fp);
+							colconsole(guibits, 20, line, 127, 127, 255);
+							free(line);
+						}
+						fclose(fp);
 					}
-					fclose(fp);
+					else
+					{
+						colconsole(guibits, 20, "Failed to open init/credits!", 255, 63, 0);
+					}
 				}
 				break;
 				default:
-					fprintf(stderr, "Error - menuitem %d/%d undefined\n", menu, mdo);
+				{
+					char emsg[32];
+					sprintf(emsg, "Error - menuitem %d/%d undefined", menu, mdo);
+					colconsole(guibits, 8, emsg, 255, 63, 0);
+					fprintf(stderr, "%s\n", emsg);
+				}
 				break;
 			}
 		}
