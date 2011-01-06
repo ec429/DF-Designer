@@ -41,8 +41,8 @@ Load and Save with 'l' and 's', or from the File menu.  Suggested extension, ".d
 Edit has two submodes, COLOURS and DF-TILES, two methods of displaying what's in each tile.  Select them with 'c' and 'x' respectively, or from the View menu.
 DF Designer doesn't implement anything near the full ontology of buildings and constructions in DF; however, as the versions go by, it should increase.
 'Objects' - beds, chairs, tables, and other stuff - don't appear in Isometric mode right now, because I haven't done any models or anything like that for them yet.
-"Shadowing" is DF Designer's way of showing you what's on nearby levels, in Edit-COLOURS mode; fainter versions of the z-levels above and below are superimposed upon the current level.  You can toggle shadowing from the View menu (4/6).
-"Semislice" allows you to choose whether the slice in Isometric mode cuts above or below the floors.  You can toggle semislice from the View menu (4/6).
+"Shadowing" is DF Designer's way of showing you what's on nearby levels, in Edit-COLOURS mode; fainter versions of the z-levels above and below are superimposed upon the current level.  You can toggle shadowing from the View menu (4/5).
+"Semislice" allows you to choose whether the slice in Isometric mode cuts above or below the floors.  You can toggle semislice from the View menu (4/5).
 You might notice that shadowing and semislice both use the same menu button.  In fact, they are controlled together; whenever one is turned on, the other is turned off.  Since only one has any effect at once (they affect different modes), this shouldn't matter.
 
 That's basically it.  You might wonder what the rules are for placing things on top of other things, and whether what was there before stays there; answer: it's all ad-hoc.  Just try stuff; after all, you can always get back to what you had before (though if you've put lots of work in, you might want to save first, because there's no 'undo' feature yet).
