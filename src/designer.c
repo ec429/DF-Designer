@@ -427,9 +427,7 @@ int main(int argc, char *argv[])
 	cls.w=OSIZ_X;
 	cls.h=OSIZ_Y;
 	
-	int menu=0;
-	int msel=-1;
-	int mdo=-1;
+	int menu=0, msel=-1, mdo=-1, mold=0;
 	
 	// If a filename was given on the cmdline, load it now
 	if(lfn!=NULL)
@@ -1312,22 +1310,18 @@ int main(int argc, char *argv[])
 		switch(viewmode)
 		{
 			case 0:
-				dmi=4;
 				switch(editmode)
 				{
 					case 0:
-						dmj=3;
+						dmi=4;dmj=1;
 					break;
 					case 1:
-						dmj=4;
-					break;
-					default:
-						dmj=1;
+						dmi=4;dmj=2;
 					break;
 				}
 			break;
 			case 1:
-				dmi=4;dmj=2;
+				dmi=4;dmj=3;
 			break;
 		}
 		if(dmi)
@@ -1620,6 +1614,7 @@ int main(int argc, char *argv[])
 								{
 									menu=0;
 								}
+								mold=menu;
 							}
 							else if(what!=0)
 							{
@@ -1630,6 +1625,7 @@ int main(int argc, char *argv[])
 									{
 										if(menus[i][j].key==what)
 										{
+											mold=menu;
 											menu=i;
 											mdo=j;
 											i=10;
@@ -1847,6 +1843,7 @@ int main(int argc, char *argv[])
 									{
 										mdo=msel;
 									}
+									mold=menu;
 								}
 							}
 							keyactive=false;
@@ -2005,22 +2002,21 @@ int main(int argc, char *argv[])
 				case 35:
 					lastkey='p';
 				break;
-				case 41: // Edit-mode
+				case 41: // Edit-Colours
 					viewmode=0;
-				break;
-				case 42: // Iso/3D-mode
-					viewmode=1;
-				break;
-				case 43: // Edit-Colours
 					editmode=0;
 				break;
-				case 44: // Edit-DFTILES
+				case 42: // Edit-DFTILES
+					viewmode=0;
 					editmode=1;
 				break;
-				case 45: // Toggle Console
+				case 43: // Iso/3D-mode
+					viewmode=1;
+				break;
+				case 44: // Toggle Console
 					showconsole=!showconsole;
 				break;
-				case 46: // Shadowing/Semislice
+				case 45: // Shadowing/Semislice
 					semislice=!semislice;
 					if(viewmode==1)
 					{
@@ -2191,7 +2187,7 @@ int main(int argc, char *argv[])
 			}
 		}
 		
-		mdo=-1;
+		mdo=-1;menu=mold;
 		// Apply viewport movement / 3dview rotation
 		view.x=max(min(view.x+dview.x, worldx-1), 0);
 		view.y=max(min(view.y+dview.y, worldy-1), 0);

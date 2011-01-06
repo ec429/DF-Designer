@@ -11,21 +11,16 @@ SDL_Surface * gf_init(int x, int y)
 {
 	c3=sqrt(3)/2.0;
 	SDL_Surface * screen;
-	if(SDL_Init(SDL_INIT_VIDEO)<0)
+	if(SDL_Init(SDL_INIT_VIDEO|SDL_DOUBLEBUF)<0)
 	{
 		perror("SDL_Init");
 		return(NULL);
 	}
 	atexit(SDL_Quit);
-	if((screen = SDL_SetVideoMode(x, y, OBPP, SDL_HWSURFACE))==0)
+	if((screen = SDL_SetVideoMode(x, y, OBPP, SDL_HWSURFACE|SDL_ASYNCBLIT|SDL_HWACCEL))==0)
 	{
 		perror("SDL_SetVideoMode");
 		SDL_Quit();
-		return(NULL);
-	}
-	if(SDL_MUSTLOCK(screen) && SDL_LockSurface(screen) < 0)
-	{
-		perror("SDL_LockSurface");
 		return(NULL);
 	}
 	return(screen);
@@ -35,9 +30,15 @@ int pset(SDL_Surface * screen, int x, int y, unsigned char r, unsigned char g, u
 {
 	if((0<=x) && (x<screen->w) && (0<=y) && (y<screen->h))
 	{
+		if(SDL_MUSTLOCK(screen) && SDL_LockSurface(screen) < 0)
+		{
+			perror("SDL_LockSurface");
+			return(2);
+		}
 		unsigned long int pixval = SDL_MapRGB(screen->format, r, g, b);
 		unsigned char *pixloc = (unsigned char *)screen->pixels + y*screen->pitch + x*screen->format->BytesPerPixel;
 		*(unsigned long int *)pixloc = pixval;
+		if(SDL_MUSTLOCK(screen)) SDL_UnlockSurface(screen);
 		return(0);
 	}
 	return(1);
@@ -45,7 +46,6 @@ int pset(SDL_Surface * screen, int x, int y, unsigned char r, unsigned char g, u
 
 int line(SDL_Surface * screen, int x1, int y1, int x2, int y2, unsigned char r, unsigned char g, unsigned char b)
 {
-	/* TODO: replace this with the DYDX code */
 	if(x2<x1)
 	{
 		int _t=x1;
