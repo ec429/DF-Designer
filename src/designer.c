@@ -1553,6 +1553,10 @@ int main(int argc, char *argv[])
 						{
 							viewmode^=1;
 						}
+						if(key.sym==SDLK_e)
+						{
+							viewmode=0;
+						}
 						if(key.sym==SDLK_h)
 						{
 							showconsole=true;
