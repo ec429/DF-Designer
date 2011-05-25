@@ -1,5 +1,5 @@
 //	designer - third party architectural design utility for 'Dwarf Fortress'
-//	Copyright (C) 2010 Edward Cree (see top of src/designer.c for license details)
+//	Copyright (C) 2010-11 Edward Cree (see top of src/designer.c for license details)
 //   inc/map.h - header for map manipulation functions
 #pragma once
 

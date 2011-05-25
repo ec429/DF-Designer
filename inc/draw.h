@@ -1,5 +1,5 @@
 //	designer - third party architectural design utility for 'Dwarf Fortress'
-//	Copyright (C) 2010 Edward Cree (see top of src/designer.c for license details)
+//	Copyright (C) 2010-11 Edward Cree (see top of src/designer.c for license details)
 //   inc/draw.h - header for drawing-functions
 #pragma once
 #include <stdbool.h>

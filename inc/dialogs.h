@@ -1,5 +1,5 @@
 //	designer - third party architectural design utility for 'Dwarf Fortress'
-//	Copyright (C) 2010 Edward Cree (see top of designer.c for license details)
+//	Copyright (C) 2010-11 Edward Cree (see top of designer.c for license details)
 //   inc/dialogs.h - header for gui dialogue boxes
 #pragma once
 #include <stdbool.h>

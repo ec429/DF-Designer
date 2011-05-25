@@ -6,7 +6,7 @@ GIT=${GIT// /-}
 
 cat >inc/version.h <<_EOM
 //	designer - third party architectural design utility for 'Dwarf Fortress'
-//	Copyright (C) 2010 Edward Cree (see top of designer.c for license details)
+//	Copyright (C) 2010-11 Edward Cree (see top of designer.c for license details)
 //   inc/version.h - contains version number
 #pragma once
 #define VERSION_MAJ	$MAJOR	// Major version

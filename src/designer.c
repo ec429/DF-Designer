@@ -1,6 +1,6 @@
 /*
 	designer - third party architectural design utility for 'Dwarf Fortress'
-	Copyright (C) 2010 Edward Cree
+	Copyright (C) 2010-11 Edward Cree
 	(contributions are copyright their respective owners)
 
 	This program is free software: you can redistribute it and/or modify
