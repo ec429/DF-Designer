@@ -9,7 +9,7 @@
 #define max(a,b)	((a)>(b)?(a):(b))
 #define min(a,b)	((a)<(b)?(a):(b))
 
-const char **xatiles; // populated with array of 128 unicode strings representing the high half of 'codepage 437'
+const char *const *xatiles; // populated with array of 128 unicode strings representing the high half of 'codepage 437'
 
 void init437(void); // fill out xatiles
 char * getl(FILE *); // get a line of string data, realloc()ing as it goes, so you don't need to make a buffer for it, nor must thee fret thyself about overruns!

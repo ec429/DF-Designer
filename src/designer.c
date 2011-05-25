@@ -103,7 +103,11 @@ int main(int argc, char *argv[])
 	}
 	
 	// Set up the fonts
-	TTF_Init();
+	if(TTF_Init())
+	{
+		fprintf(stderr, "Failed to initialise fonts!\nTTF_Init: %s\n", TTF_GetError());
+		return(1);
+	}
 	atexit(TTF_Quit);
 	TTF_Font *tiny_font=TTF_OpenFont(FONT_FILE, 8);
 	TTF_Font *small_font=TTF_OpenFont(FONT_FILE, 11);
@@ -117,6 +121,11 @@ int main(int argc, char *argv[])
 
 	// SDL stuff
 	SDL_Surface * screen = gf_init(OSIZ_X, OSIZ_Y);
+	if(!screen)
+	{
+		fprintf(stderr, "Failed to open graphics window\n");
+		return(1);
+	}
 	SDL_WM_SetCaption("DF Designer by soundandfury", "DF Designer");
 	SDL_EnableUNICODE(1);
 	SDL_Event event;
@@ -133,7 +142,12 @@ int main(int argc, char *argv[])
 	int errupt = 0;
 	
 	// Set up the overlay screen for the scrolly console
-	SDL_Surface * overlay = SDL_CreateRGBSurface(SDL_SWSURFACE, CONSOLE_WIDTH, CONSOLE_HEIGHT+20, OBPP, 0, 0, 0, 0);
+	SDL_Surface *overlay=SDL_CreateRGBSurface(SDL_SWSURFACE, CONSOLE_WIDTH, CONSOLE_HEIGHT+20, OBPP, 0, 0, 0, 0);
+	if(!overlay)
+	{
+		fprintf(stderr, "Failed to create screen overlay: SDL_CreateRGBSurface: %s\n", SDL_GetError());
+		return(1);
+	}
 	SDL_FillRect(overlay, &cls, SDL_MapRGB(overlay->format, 0, 0, 0));
 	
 	// Fill out the guibits information (enough for the console)
@@ -155,6 +169,11 @@ int main(int argc, char *argv[])
 	fprintf(stderr, "Reading init/menu\n");
 	console(guibits, 20, "Reading init/menu");
 	FILE *mfp = fopen("init/menu", "r");
+	if(!mfp)
+	{
+		perror("Failed to open init/menu: fopen");
+		return(1);
+	}
 	char ** mfile=NULL;int nlines=0;
 	while(!feof(mfp))
 	{
@@ -287,15 +306,16 @@ int main(int argc, char *argv[])
 		free(mfile[n]);
 	}
 	free(mfile);
+	fclose(mfp);
 	
 	fprintf(stderr, "Loading gui images...\n");
 	console(guibits, 20, "Loading gui images...");
 	
 	// Load in GUI images
-	SDL_Surface * small_button_u = IMG_Load("img/small_button_u.png");
-	SDL_Surface * small_button_p = IMG_Load("img/small_button_p.png");
-	SDL_Surface * box_small = IMG_Load("img/box.png");
-	SDL_Surface * counter = IMG_Load("img/counter.png");
+	SDL_Surface *small_button_u = IMG_Load("img/small_button_u.png");
+	SDL_Surface *small_button_p = IMG_Load("img/small_button_p.png");
+	SDL_Surface *box_small = IMG_Load("img/box.png");
+	SDL_Surface *counter = IMG_Load("img/counter.png");
 	if(!small_button_u || !small_button_p || !box_small || !counter)
 	{
 		imgfail:
@@ -310,7 +330,7 @@ int main(int argc, char *argv[])
 	guibits.counter=counter;
 	
 	/* read in the newgui images - first the 'base' ones, then try to open the art ones and if not, procedurally generate from the base ones & text */
-	SDL_Surface * menubase[nmenus], * menubtn[nmenus][10];
+	SDL_Surface *menubase[nmenus], *menubtn[nmenus][10];
 	{
 		char * basename=strdup("img/menu/ / .png");
 		int i,j;
@@ -361,7 +381,7 @@ int main(int argc, char *argv[])
 	}
 	
 	// Load in the tilemap for DF-TILES editview
-	SDL_Surface * dftiles=IMG_Load("img/df_tiles.png");
+	SDL_Surface *dftiles=IMG_Load("img/df_tiles.png");
 	if(!dftiles)
 	{
 		fprintf(stderr, "Failed to read img/df_tiles.png!\nASCII-TILES mode will not be available!\n");
@@ -371,7 +391,7 @@ int main(int argc, char *argv[])
 	// Warning about how beta we are
 	if(confirms)
 	{
-		char * boxtextlines[] = {"Warning!  DF Designer is still beta!", "Use at your own risk.  For support:", "ask soundnfury on #bay12games or", "post in the forum thread"};
+		char *boxtextlines[] = {"Warning!  DF Designer is still beta!", "Use at your own risk.  For support:", "ask soundnfury on #bay12games or", "post in the forum thread"};
 		okbox(screen, box_small, boxtextlines, 4, small_button_u, small_button_p, small_font, big_font, "OK", 24, 48, 96, 48, 96, 192);
 	}
 	else
@@ -436,6 +456,8 @@ int main(int argc, char *argv[])
 		if(e==2)
 			return(2);
 	}
+	
+	// TODO This is where the audit is up to
 	
 	// Main event loop (TODO: there is too much in here which needs refactoring out)
 	while(!errupt)

@@ -10,19 +10,19 @@
 SDL_Surface * gf_init(int x, int y)
 {
 	c3=sqrt(3)/2.0;
-	SDL_Surface * screen;
+	SDL_Surface *screen;
 	if(SDL_Init(SDL_INIT_VIDEO|SDL_DOUBLEBUF)<0)
 	{
-		perror("SDL_Init");
+		fprintf(stderr, "SDL_Init: %s\n", SDL_GetError());
 		return(NULL);
 	}
-	atexit(SDL_Quit);
-	if((screen = SDL_SetVideoMode(x, y, OBPP, SDL_HWSURFACE|SDL_ASYNCBLIT|SDL_HWACCEL))==0)
+	if(!(screen=SDL_SetVideoMode(x, y, OBPP, SDL_HWSURFACE|SDL_ASYNCBLIT|SDL_HWACCEL)))
 	{
-		perror("SDL_SetVideoMode");
+		fprintf(stderr, "SDL_SetVideoMode: %s\n", SDL_GetError());
 		SDL_Quit();
 		return(NULL);
 	}
+	atexit(SDL_Quit);
 	return(screen);
 }
 
@@ -32,7 +32,7 @@ int pset(SDL_Surface * screen, int x, int y, unsigned char r, unsigned char g, u
 	{
 		if(SDL_MUSTLOCK(screen) && SDL_LockSurface(screen) < 0)
 		{
-			perror("SDL_LockSurface");
+			fprintf(stderr, "SDL_LockSurface: %s\n", SDL_GetError());
 			return(2);
 		}
 		unsigned long int pixval = SDL_MapRGB(screen->format, r, g, b);
