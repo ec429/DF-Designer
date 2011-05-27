@@ -36,7 +36,7 @@ $(LIBDIR)dialogs.o: $(SRCDIR)dialogs.c $(INCDIR)dialogs.h
 
 $(LIBDIR)map.o: $(SRCDIR)map.c $(INCDIR)map.h $(INCDIR)draw.h $(INCDIR)dialogs.h $(INCDIR)bits.h $(INCDIR)version.h
 	-mkdir $(LIBDIR)
-	$(CC) $(FLAGS) -o $(LIBDIR)map.o -c $(SRCDIR)map.c
+	$(CC) $(FLAGS) -o $(LIBDIR)map.o -c $(SRCDIR)map.c $(DGFX)
 
 $(LIBDIR)bits.o: $(SRCDIR)bits.c $(INCDIR)bits.h
 	-mkdir $(LIBDIR)

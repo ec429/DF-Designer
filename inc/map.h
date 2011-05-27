@@ -30,6 +30,9 @@ int load_map(char *filename, tile ****map, gui guibits, int *zslice, int *uslice
 int save_map(char *filename, tile ***map, gui guibits);
 int export_map(char *filename, tile ***map, gui guibits, bool qf);
 int clear_map(tile ***map, bool alloc);
+void drawminimap(int worldx, int worldy, int levels, int zslice, tile ***map, pos view, SDL_Surface *screen);
+void tilecolour(unsigned char *r, unsigned char *g, unsigned char *b, unsigned char here, int br, bool semislice);
+void drawobject(SDL_Surface *screen, SDL_Rect maptile, int object, unsigned char r, unsigned char g, unsigned char b);
 
 int levels;
 int groundlevel;

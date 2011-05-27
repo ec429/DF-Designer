@@ -621,3 +621,362 @@ int clear_map(tile ***map, bool alloc)
 	}
 	return(0);
 }
+
+void drawminimap(int worldx, int worldy, int levels, int zslice, tile ***map, pos view, SDL_Surface *screen)
+{
+	int dx,dy;
+	dx=ceil(worldx/256.0);
+	dy=ceil(worldy/256.0);
+	SDL_Rect minimap={2, 2, worldx/dx, worldy/dy};
+	int ff=dx*dy;
+	int x,y;
+	for(x=0;x<floor(worldx/dx);x++)
+	{
+		for(y=0;y<floor(worldy/dx);y++)
+		{
+			int sx=minimap.x+x,sy=minimap.y+y;
+			if(sy<OSIZ_Y)
+			{
+				unsigned char r=0,g=0,b=0;
+				if((x==floor(view.x/dx)) || (x==floor((view.x+63)/dx)) || (y==floor(view.y/dy)) || (y==floor((view.y+63)/dy)))
+				{
+					r=255;g=255;b=0;
+				}
+				else
+				{
+					int z;
+					for(z=min(zslice+1, levels-1);z>=max(zslice-3, 0);z--)
+					{
+						int delx, dely;
+						for(delx=0;delx<dx;delx++)
+						{
+							for(dely=0;dely<dy;dely++)
+							{
+								char here=map[z][x*dx+delx][y*dy+dely].data;
+								int br=pow(2, max(6-abs(zslice-z), 0))/ff;
+								if(here&TILE_ROCK)
+								{
+									if(zslice==z)
+									{
+										r=min(r+72/ff, 255);
+										g=min(g+72/ff, 255);
+										b=min(b+172/ff, 255);
+									}
+									else
+									{
+										r=min(r+br, 255);
+										g=min(g+br, 255);
+										b=min(b+br, 255);
+									}
+								}
+								else if(here&TILE_FORTS)
+								{
+									if(zslice==z)
+									{
+										r=min(r+72/ff, 255);
+										g=min(g+172/ff, 255);
+										b=min(b+172/ff, 255);
+									}
+									else
+									{
+										g=min(g+br, 255);
+										b=min(b+br, 255);
+									}
+								}
+								else if(here&TILE_WATER)
+								{
+									if(zslice==z)
+									{
+										r=min(r, 255);
+										g=min(g, 255);
+										b=min(b+128/ff, 255);
+									}
+									else
+									{
+										r=min(r, 255);
+										g=min(g, 255);
+										b=min(b+(br*2/3), 255);
+									}
+								}
+								else if(here&TILE_FLOOR)
+								{
+									if(zslice==z)
+									{
+										r=min(r+172/ff, 255);
+										g=min(g+172/ff, 255);
+										b=min(b+72/ff, 255);
+									}
+									else
+									{
+										r=min(r+br/3, 255);
+										g=min(g+br/3, 255);
+										b=min(b+br/6, 255);
+									}
+								}
+								else if(here&TILE_GRASS)
+								{
+									if(zslice==z)
+									{
+										g=min(g+128/ff, 255);
+									}
+									else
+									{
+										g=min(g+br, 255);
+									}
+								}
+								else if(here&TILE_STAIRS)
+								{
+									if(zslice==z)
+									{
+										g=min((int)g+128/ff, 255);
+										b=min((int)b+128/ff, 255);
+									}
+									else
+									{
+										g=min((int)g+br, 255);
+										b=min((int)b+br, 255);
+									}
+								}
+								else if(here&TILE_DOOR)
+								{
+									if(zslice==z)
+										r=min(r+128/ff, 255);
+									else
+										r=min(r+br, 255);
+								}
+							}
+						}
+					}
+				}
+				pset(screen, sx, sy, r, g, b);
+			}
+		}
+	}
+}
+
+void tilecolour(unsigned char *r, unsigned char *g, unsigned char *b, unsigned char here, int br, bool semislice)
+{
+	if(here&TILE_ROCK)
+	{
+		if(br==64)
+		{
+			(*r)=min((*r)+72, 255);
+			(*g)=min((*g)+72, 255);
+			(*b)=min((*b)+172, 255);
+		}
+		else
+		{
+			(*r)=min((*r)+br, 255);
+			(*g)=min((*g)+br, 255);
+			(*b)=min((*b)+br, 255);
+		}
+	}
+	else if(here&TILE_FORTS)
+	{
+		if(br==64)
+		{
+			(*r)=min((*r)+72, 255);
+			(*g)=min((*g)+172, 255);
+			(*b)=min((*b)+172, 255);
+		}
+		else
+		{
+			(*g)=min((*g)+br, 255);
+			(*b)=min((*b)+br, 255);
+		}
+	}
+	else if(here&TILE_WATER)
+	{
+		if(br==64)
+		{
+			(*r)=min((*r), 255);
+			(*g)=min((*g), 255);
+			(*b)=min((*b)+128, 255);
+		}
+		else
+		{
+			(*r)=min((*r), 255);
+			(*g)=min((*g), 255);
+			(*b)=min((*b)+(br*2/3), 255);
+		}
+	}
+	else if(here&TILE_FLOOR)
+	{
+		if(br==64)
+		{
+			(*r)=min((*r)+172, 255);
+			(*g)=min((*g)+172, 255);
+			(*b)=min((*b)+72, 255);
+		}
+		else
+		{
+			(*r)=min((*r)+br/3, 255);
+			(*g)=min((*g)+br/3, 255);
+			(*b)=min((*b)+br/6, 255);
+		}
+	}
+	else if(here&TILE_GRASS)
+	{
+		if(br==64)
+		{
+			(*g)=min((*g)+128, 255);
+		}
+		else
+		{
+			(*g)=min((*g)+br, 255);
+		}
+	}
+	else if(here&TILE_STAIRS)
+	{
+		if(br==64)
+		{
+			(*g)=min((int)(*g)+128, 255);
+			(*b)=min((int)(*b)+128, 255);
+		}
+		else
+		{
+			(*g)=min((int)(*g)+br, 255);
+			(*b)=min((int)(*b)+br, 255);
+		}
+	}
+	else if(here&TILE_DOOR)
+	{
+		if(br==64)
+			(*r)=min((*r)+128, 255);
+		else
+			(*r)=min((*r)+br, 255);
+	}
+	if(semislice)
+	{
+		(*r)=min((*r)*2, 255);
+		(*g)=min((*g)*2, 255);
+		(*b)=min((*b)*2, 255);
+	}
+}
+
+void drawobject(SDL_Surface *screen, SDL_Rect maptile, int object, unsigned char r, unsigned char g, unsigned char b)
+{
+	unsigned int tb=max(r, max(g, b));
+	unsigned char or,og,ob;
+	switch(object) // TODO: get object images from file (use DF-Tiles?)
+	{
+		case OBJECT_BED:
+			or=192;og=160;ob=0;
+			pset(screen, maptile.x+3, maptile.y+2, or, og, ob);
+			pset(screen, maptile.x+4, maptile.y+2, or, og, ob);
+			pset(screen, maptile.x+2, maptile.y+3, or, og, ob);
+			pset(screen, maptile.x+5, maptile.y+3, or, og, ob);
+			pset(screen, maptile.x+2, maptile.y+4, or, og, ob);
+			pset(screen, maptile.x+3, maptile.y+4, or, og, ob);
+			pset(screen, maptile.x+4, maptile.y+4, or, og, ob);
+			pset(screen, maptile.x+5, maptile.y+4, or, og, ob);
+			pset(screen, maptile.x+2, maptile.y+5, or, og, ob);
+			pset(screen, maptile.x+5, maptile.y+5, or, og, ob);
+			pset(screen, maptile.x+3, maptile.y+6, or, og, ob);
+			pset(screen, maptile.x+4, maptile.y+6, or, og, ob);
+		break;
+		case OBJECT_CHAIR:
+			if(tb>160)
+			{
+				or=og=ob=128;
+			}
+			else
+			{
+				or=og=ob=255;
+			}
+			pset(screen, maptile.x+2, maptile.y+3, or, og, ob);
+			pset(screen, maptile.x+3, maptile.y+3, or, og, ob);
+			pset(screen, maptile.x+4, maptile.y+3, or, og, ob);
+			pset(screen, maptile.x+5, maptile.y+3, or, og, ob);
+			pset(screen, maptile.x+6, maptile.y+3, or, og, ob);
+			pset(screen, maptile.x+3, maptile.y+4, or, og, ob);
+			pset(screen, maptile.x+5, maptile.y+4, or, og, ob);
+			pset(screen, maptile.x+3, maptile.y+5, or, og, ob);
+			pset(screen, maptile.x+5, maptile.y+5, or, og, ob);
+			pset(screen, maptile.x+3, maptile.y+6, or, og, ob);
+			pset(screen, maptile.x+5, maptile.y+6, or, og, ob);
+		break;
+		case OBJECT_TABLE:
+			if(tb>200)
+			{
+				or=og=ob=160;
+			}
+			else
+			{
+				or=og=ob=255;
+			}
+			pset(screen, maptile.x+1, maptile.y+2, or, og, ob);
+			pset(screen, maptile.x+2, maptile.y+2, or, og, ob);
+			pset(screen, maptile.x+3, maptile.y+2, or, og, ob);
+			pset(screen, maptile.x+4, maptile.y+2, or, og, ob);
+			pset(screen, maptile.x+5, maptile.y+2, or, og, ob);
+			pset(screen, maptile.x+6, maptile.y+2, or, og, ob);
+			pset(screen, maptile.x+7, maptile.y+2, or, og, ob);
+			pset(screen, maptile.x+1, maptile.y+4, or, og, ob);
+			pset(screen, maptile.x+2, maptile.y+4, or, og, ob);
+			pset(screen, maptile.x+3, maptile.y+4, or, og, ob);
+			pset(screen, maptile.x+4, maptile.y+4, or, og, ob);
+			pset(screen, maptile.x+5, maptile.y+4, or, og, ob);
+			pset(screen, maptile.x+6, maptile.y+4, or, og, ob);
+			pset(screen, maptile.x+7, maptile.y+4, or, og, ob);
+			pset(screen, maptile.x+4, maptile.y+5, or, og, ob);
+			pset(screen, maptile.x+4, maptile.y+6, or, og, ob);
+		break;
+		case OBJECT_STATUE:
+			if(tb>200)
+			{
+				or=og=ob=128;
+			}
+			else
+			{
+				or=og=ob=255;
+			}
+			pset(screen, maptile.x+2, maptile.y+6, or, og, ob);
+			pset(screen, maptile.x+3, maptile.y+6, or, og, ob);
+			pset(screen, maptile.x+3, maptile.y+5, or, og, ob);
+			pset(screen, maptile.x+3, maptile.y+4, or, og, ob);
+			pset(screen, maptile.x+2, maptile.y+3, or, og, ob);
+			pset(screen, maptile.x+2, maptile.y+2, or, og, ob);
+			pset(screen, maptile.x+3, maptile.y+1, or, og, ob);
+			pset(screen, maptile.x+4, maptile.y+1, or, og, ob);
+			pset(screen, maptile.x+5, maptile.y+1, or, og, ob);
+			pset(screen, maptile.x+6, maptile.y+2, or, og, ob);
+			pset(screen, maptile.x+6, maptile.y+3, or, og, ob);
+			pset(screen, maptile.x+5, maptile.y+4, or, og, ob);
+			pset(screen, maptile.x+5, maptile.y+5, or, og, ob);
+			pset(screen, maptile.x+5, maptile.y+6, or, og, ob);
+			pset(screen, maptile.x+6, maptile.y+6, or, og, ob);
+		break;
+		case OBJECT_STKPILE:
+			if(tb>160)
+			{
+				or=og=ob=96;
+			}
+			else
+			{
+				or=og=ob=224;
+			}
+			pset(screen, maptile.x+2, maptile.y+3, or, og, ob);										
+			pset(screen, maptile.x+3, maptile.y+3, or, og, ob);
+			pset(screen, maptile.x+4, maptile.y+3, or, og, ob);
+			pset(screen, maptile.x+5, maptile.y+3, or, og, ob);
+			pset(screen, maptile.x+6, maptile.y+3, or, og, ob);
+			pset(screen, maptile.x+2, maptile.y+5, or, og, ob);
+			pset(screen, maptile.x+3, maptile.y+5, or, og, ob);
+			pset(screen, maptile.x+4, maptile.y+5, or, og, ob);
+			pset(screen, maptile.x+5, maptile.y+5, or, og, ob);
+			pset(screen, maptile.x+6, maptile.y+5, or, og, ob);
+		break;
+		default:
+			pset(screen, maptile.x+1, maptile.y+1, 255, 0, 0);
+			pset(screen, maptile.x+2, maptile.y+2, 255, 0, 0);
+			pset(screen, maptile.x+3, maptile.y+3, 255, 0, 0);
+			pset(screen, maptile.x+4, maptile.y+4, 255, 0, 0);
+			pset(screen, maptile.x+5, maptile.y+5, 255, 0, 0);
+			pset(screen, maptile.x+1, maptile.y+5, 255, 0, 0);
+			pset(screen, maptile.x+2, maptile.y+4, 255, 0, 0);
+			pset(screen, maptile.x+4, maptile.y+2, 255, 0, 0);
+			pset(screen, maptile.x+5, maptile.y+1, 255, 0, 0);
+		break;
+	}
+}

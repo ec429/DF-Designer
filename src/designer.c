@@ -457,145 +457,14 @@ int main(int argc, char *argv[])
 			return(2);
 	}
 	
-	// TODO This is where the audit is up to
-	
 	// Main event loop (TODO: there is too much in here which needs refactoring out)
 	while(!errupt)
 	{
 		SDL_FillRect(screen, &cls, SDL_MapRGB(screen->format, 0, 0, 0));
 		// minimap
 		if(!showconsole)
-		{
-			int dx,dy;
-			dx=ceil(worldx/256.0);
-			dy=ceil(worldy/256.0);
-			SDL_Rect minimap={2, 2, worldx/dx, worldy/dy};
-			int ff=dx*dy;
-			int x,y;
-			for(x=0;x<floor(worldx/dx);x++)
-			{
-				for(y=0;y<floor(worldy/dx);y++)
-				{
-					int sx=minimap.x+x,sy=minimap.y+y;
-					if(sy<OSIZ_Y)
-					{
-						unsigned char r=0,g=0,b=0;
-						if((x==floor(view.x/dx)) || (x==floor((view.x+63)/dx)) || (y==floor(view.y/dy)) || (y==floor((view.y+63)/dy)))
-						{
-							r=255;g=255;b=0;
-						}
-						else
-						{
-							int z;
-							for(z=min(zslice+1, levels-1);z>=max(zslice-3, 0);z--)
-							{
-								int delx, dely;
-								for(delx=0;delx<dx;delx++)
-								{
-									for(dely=0;dely<dy;dely++)
-									{
-										char here=map[z][x*dx+delx][y*dy+dely].data;
-										int br=pow(2, max(6-abs(zslice-z), 0))/ff;
-										if(here&TILE_ROCK)
-										{
-											if(zslice==z)
-											{
-												r=min(r+72/ff, 255);
-												g=min(g+72/ff, 255);
-												b=min(b+172/ff, 255);
-											}
-											else
-											{
-												r=min(r+br, 255);
-												g=min(g+br, 255);
-												b=min(b+br, 255);
-											}
-										}
-										else if(here&TILE_FORTS)
-										{
-											if(zslice==z)
-											{
-												r=min(r+72/ff, 255);
-												g=min(g+172/ff, 255);
-												b=min(b+172/ff, 255);
-											}
-											else
-											{
-												g=min(g+br, 255);
-												b=min(b+br, 255);
-											}
-										}
-										else if(here&TILE_WATER)
-										{
-											if(zslice==z)
-											{
-												r=min(r, 255);
-												g=min(g, 255);
-												b=min(b+128/ff, 255);
-											}
-											else
-											{
-												r=min(r, 255);
-												g=min(g, 255);
-												b=min(b+(br*2/3), 255);
-											}
-										}
-										else if(here&TILE_FLOOR)
-										{
-											if(zslice==z)
-											{
-												r=min(r+172/ff, 255);
-												g=min(g+172/ff, 255);
-												b=min(b+72/ff, 255);
-											}
-											else
-											{
-												r=min(r+br/3, 255);
-												g=min(g+br/3, 255);
-												b=min(b+br/6, 255);
-											}
-										}
-										else if(here&TILE_GRASS)
-										{
-											if(zslice==z)
-											{
-												g=min(g+128/ff, 255);
-											}
-											else
-											{
-												g=min(g+br, 255);
-											}
-										}
-										else if(here&TILE_STAIRS)
-										{
-											if(zslice==z)
-											{
-												g=min((int)g+128/ff, 255);
-												b=min((int)b+128/ff, 255);
-											}
-											else
-											{
-												g=min((int)g+br, 255);
-												b=min((int)b+br, 255);
-											}
-										}
-										else if(here&TILE_DOOR)
-										{
-											if(zslice==z)
-												r=min(r+128/ff, 255);
-											else
-												r=min(r+br, 255);
-										}
-									}
-								}
-							}
-						}
-						pset(screen, sx, sy, r, g, b);
-					}
-				}
-			}
-		}
-		
+			drawminimap(worldx, worldy, levels, zslice, map, view, screen);
+
 		// Main view.  Voodoo stuff, just trust it to work
 		switch(viewmode)
 		{
@@ -613,7 +482,8 @@ int main(int argc, char *argv[])
 						{
 							maptile.x=maparea.x+(x*maptile.w);
 							maptile.y=maparea.y+(y*maptile.h);
-							if(((keyactive || (drag & SDL_BUTTON_LEFT)) && (mouse.x>=maptile.x) && (mouse.y>=maptile.y) && (mouse.x<maptile.x+maptile.w) && (mouse.y<maptile.y+maptile.h)) || ((lastr>1) && ((((mouse.x>=maptile.x) && (lastx+maptile.w*(lastview.x-view.x)<maptile.x+maptile.w)) || ((lastx+maptile.w*(lastview.x-view.x)>=maptile.x) && (mouse.x<maptile.x+maptile.w))) && (((mouse.y>=maptile.y) && (lasty+maptile.h*(lastview.y-view.y)<maptile.y+maptile.h)) || ((lasty+maptile.h*(lastview.y-view.y)>=maptile.y) && (mouse.y<maptile.y+maptile.h)))))) // clicking and dragging (hellish complicated-looking conditional, just trust me on this one :S ...    Here be dragons!)
+							bool mousehere=(mouse.x>=maptile.x) && (mouse.y>=maptile.y) && (mouse.x<maptile.x+maptile.w) && (mouse.y<maptile.y+maptile.h);
+							if(((keyactive || (drag & SDL_BUTTON_LEFT)) && mousehere) || ((lastr>1) && ((((mouse.x>=maptile.x) && (lastx+maptile.w*(lastview.x-view.x)<maptile.x+maptile.w)) || ((lastx+maptile.w*(lastview.x-view.x)>=maptile.x) && (mouse.x<maptile.x+maptile.w))) && (((mouse.y>=maptile.y) && (lasty+maptile.h*(lastview.y-view.y)<maptile.y+maptile.h)) || ((lasty+maptile.h*(lastview.y-view.y)>=maptile.y) && (mouse.y<maptile.y+maptile.h)))))) // clicking and dragging (hellish complicated-looking conditional, just trust me on this one :S ...    Here be dragons!)
 							{
 								switch(lastkey)
 								{
@@ -695,104 +565,9 @@ int main(int argc, char *argv[])
 									{
 										unsigned char here=map[z][x+view.x][y+view.y].data;
 										int br=pow(2, max(6-abs(zslice-z), 0));
-										if(here&TILE_ROCK)
-										{
-											if(zslice==z)
-											{
-												r=min(r+72, 255);
-												g=min(g+72, 255);
-												b=min(b+172, 255);
-											}
-											else
-											{
-												r=min(r+br, 255);
-												g=min(g+br, 255);
-												b=min(b+br, 255);
-											}
-										}
-										else if(here&TILE_FORTS)
-										{
-											if(zslice==z)
-											{
-												r=min(r+72, 255);
-												g=min(g+172, 255);
-												b=min(b+172, 255);
-											}
-											else
-											{
-												g=min(g+br, 255);
-												b=min(b+br, 255);
-											}
-										}
-										else if(here&TILE_WATER)
-										{
-											if(zslice==z)
-											{
-												r=min(r, 255);
-												g=min(g, 255);
-												b=min(b+128, 255);
-											}
-											else
-											{
-												r=min(r, 255);
-												g=min(g, 255);
-												b=min(b+(br*2/3), 255);
-											}
-										}
-										else if(here&TILE_FLOOR)
-										{
-											if(zslice==z)
-											{
-												r=min(r+172, 255);
-												g=min(g+172, 255);
-												b=min(b+72, 255);
-											}
-											else
-											{
-												r=min(r+br/3, 255);
-												g=min(g+br/3, 255);
-												b=min(b+br/6, 255);
-											}
-										}
-										else if(here&TILE_GRASS)
-										{
-											if(zslice==z)
-											{
-												g=min(g+128, 255);
-											}
-											else
-											{
-												g=min(g+br, 255);
-											}
-										}
-										else if(here&TILE_STAIRS)
-										{
-											if(zslice==z)
-											{
-												g=min((int)g+128, 255);
-												b=min((int)b+128, 255);
-											}
-											else
-											{
-												g=min((int)g+br, 255);
-												b=min((int)b+br, 255);
-											}
-										}
-										else if(here&TILE_DOOR)
-										{
-											if(zslice==z)
-												r=min(r+128, 255);
-											else
-												r=min(r+br, 255);
-										}
-										if(semislice)
-										{
-											r=min(r*2, 255);
-											g=min(g*2, 255);
-											b=min(b*2, 255);
-										}
+										tilecolour(&r, &g, &b, here, br, semislice);
 									}
-									if((mouse.x>=maptile.x) && (mouse.y>=maptile.y) && (mouse.x<maptile.x+maptile.w) && (mouse.y<maptile.y+maptile.h))
+									if(mousehere)
 									{
 										SDL_FillRect(screen, &maptile, SDL_MapRGB(screen->format, 255, 255, 0));
 										SDL_Rect mtile;
@@ -815,136 +590,14 @@ int main(int argc, char *argv[])
 									if(map[zslice][x+view.x][y+view.y].data&TILE_OBJECT)
 									{
 										int object=map[zslice][x+view.x][y+view.y].object;
-										unsigned int tb=max(r, max(g, b));
-										unsigned char or,og,ob;
-										switch(object)
-										{
-											case OBJECT_BED:
-												or=192;og=160;ob=0;
-												pset(screen, maptile.x+3, maptile.y+2, or, og, ob);
-												pset(screen, maptile.x+4, maptile.y+2, or, og, ob);
-												pset(screen, maptile.x+2, maptile.y+3, or, og, ob);
-												pset(screen, maptile.x+5, maptile.y+3, or, og, ob);
-												pset(screen, maptile.x+2, maptile.y+4, or, og, ob);
-												pset(screen, maptile.x+3, maptile.y+4, or, og, ob);
-												pset(screen, maptile.x+4, maptile.y+4, or, og, ob);
-												pset(screen, maptile.x+5, maptile.y+4, or, og, ob);
-												pset(screen, maptile.x+2, maptile.y+5, or, og, ob);
-												pset(screen, maptile.x+5, maptile.y+5, or, og, ob);
-												pset(screen, maptile.x+3, maptile.y+6, or, og, ob);
-												pset(screen, maptile.x+4, maptile.y+6, or, og, ob);
-											break;
-											case OBJECT_CHAIR:
-												if(tb>160)
-												{
-													or=og=ob=128;
-												}
-												else
-												{
-													or=og=ob=255;
-												}
-												pset(screen, maptile.x+2, maptile.y+3, or, og, ob);
-												pset(screen, maptile.x+3, maptile.y+3, or, og, ob);
-												pset(screen, maptile.x+4, maptile.y+3, or, og, ob);
-												pset(screen, maptile.x+5, maptile.y+3, or, og, ob);
-												pset(screen, maptile.x+6, maptile.y+3, or, og, ob);
-												pset(screen, maptile.x+3, maptile.y+4, or, og, ob);
-												pset(screen, maptile.x+5, maptile.y+4, or, og, ob);
-												pset(screen, maptile.x+3, maptile.y+5, or, og, ob);
-												pset(screen, maptile.x+5, maptile.y+5, or, og, ob);
-												pset(screen, maptile.x+3, maptile.y+6, or, og, ob);
-												pset(screen, maptile.x+5, maptile.y+6, or, og, ob);
-											break;
-											case OBJECT_TABLE:
-												if(tb>200)
-												{
-													or=og=ob=160;
-												}
-												else
-												{
-													or=og=ob=255;
-												}
-												pset(screen, maptile.x+1, maptile.y+2, or, og, ob);
-												pset(screen, maptile.x+2, maptile.y+2, or, og, ob);
-												pset(screen, maptile.x+3, maptile.y+2, or, og, ob);
-												pset(screen, maptile.x+4, maptile.y+2, or, og, ob);
-												pset(screen, maptile.x+5, maptile.y+2, or, og, ob);
-												pset(screen, maptile.x+6, maptile.y+2, or, og, ob);
-												pset(screen, maptile.x+7, maptile.y+2, or, og, ob);
-												pset(screen, maptile.x+1, maptile.y+4, or, og, ob);
-												pset(screen, maptile.x+2, maptile.y+4, or, og, ob);
-												pset(screen, maptile.x+3, maptile.y+4, or, og, ob);
-												pset(screen, maptile.x+4, maptile.y+4, or, og, ob);
-												pset(screen, maptile.x+5, maptile.y+4, or, og, ob);
-												pset(screen, maptile.x+6, maptile.y+4, or, og, ob);
-												pset(screen, maptile.x+7, maptile.y+4, or, og, ob);
-												pset(screen, maptile.x+4, maptile.y+5, or, og, ob);
-												pset(screen, maptile.x+4, maptile.y+6, or, og, ob);
-											break;
-											case OBJECT_STATUE:
-												if(tb>200)
-												{
-													or=og=ob=128;
-												}
-												else
-												{
-													or=og=ob=255;
-												}
-												pset(screen, maptile.x+2, maptile.y+6, or, og, ob);
-												pset(screen, maptile.x+3, maptile.y+6, or, og, ob);
-												pset(screen, maptile.x+3, maptile.y+5, or, og, ob);
-												pset(screen, maptile.x+3, maptile.y+4, or, og, ob);
-												pset(screen, maptile.x+2, maptile.y+3, or, og, ob);
-												pset(screen, maptile.x+2, maptile.y+2, or, og, ob);
-												pset(screen, maptile.x+3, maptile.y+1, or, og, ob);
-												pset(screen, maptile.x+4, maptile.y+1, or, og, ob);
-												pset(screen, maptile.x+5, maptile.y+1, or, og, ob);
-												pset(screen, maptile.x+6, maptile.y+2, or, og, ob);
-												pset(screen, maptile.x+6, maptile.y+3, or, og, ob);
-												pset(screen, maptile.x+5, maptile.y+4, or, og, ob);
-												pset(screen, maptile.x+5, maptile.y+5, or, og, ob);
-												pset(screen, maptile.x+5, maptile.y+6, or, og, ob);
-												pset(screen, maptile.x+6, maptile.y+6, or, og, ob);
-											break;
-											case OBJECT_STKPILE:
-												if(tb>160)
-												{
-													or=og=ob=96;
-												}
-												else
-												{
-													or=og=ob=224;
-												}
-												pset(screen, maptile.x+2, maptile.y+3, or, og, ob);										
-												pset(screen, maptile.x+3, maptile.y+3, or, og, ob);
-												pset(screen, maptile.x+4, maptile.y+3, or, og, ob);
-												pset(screen, maptile.x+5, maptile.y+3, or, og, ob);
-												pset(screen, maptile.x+6, maptile.y+3, or, og, ob);
-												pset(screen, maptile.x+2, maptile.y+5, or, og, ob);
-												pset(screen, maptile.x+3, maptile.y+5, or, og, ob);
-												pset(screen, maptile.x+4, maptile.y+5, or, og, ob);
-												pset(screen, maptile.x+5, maptile.y+5, or, og, ob);
-												pset(screen, maptile.x+6, maptile.y+5, or, og, ob);
-											break;
-											default:
-												pset(screen, maptile.x+1, maptile.y+1, 255, 0, 0);
-												pset(screen, maptile.x+2, maptile.y+2, 255, 0, 0);
-												pset(screen, maptile.x+3, maptile.y+3, 255, 0, 0);
-												pset(screen, maptile.x+4, maptile.y+4, 255, 0, 0);
-												pset(screen, maptile.x+5, maptile.y+5, 255, 0, 0);
-												pset(screen, maptile.x+1, maptile.y+5, 255, 0, 0);
-												pset(screen, maptile.x+2, maptile.y+4, 255, 0, 0);
-												pset(screen, maptile.x+4, maptile.y+2, 255, 0, 0);
-												pset(screen, maptile.x+5, maptile.y+1, 255, 0, 0);
-											break;
-										}
+										drawobject(screen, maptile, object, r, g, b);
 									}
 								break;
 								case 1:
 									if(!dftiles)
 									{
-										fprintf(stderr, "Error: mode 1 (ASCII-TILES) unavailable.  Reverting to mode 0 (COLOURS)");
-										console(guibits, 20, "Error: mode 1 (ASCII-TILES) unavailable.  Reverting to mode 0 (COLOURS)");
+										fprintf(stderr, "Error: mode 1 (DF-TILES) unavailable.  Reverting to mode 0 (COLOURS)");
+										console(guibits, 20, "Error: mode 1 (DF-TILES) unavailable.  Reverting to mode 0 (COLOURS)");
 										editmode=0;
 									}
 									else
@@ -961,7 +614,7 @@ int main(int argc, char *argv[])
 										SDL_SetColorKey(fg, SDL_SRCCOLORKEY, SDL_MapRGB(fg->format, 0, 0, 0));
 										SDL_BlitSurface(fg, NULL, screen, &maptile);
 										SDL_FreeSurface(fg);
-										if((mouse.x>=maptile.x) && (mouse.y>=maptile.y) && (mouse.x<maptile.x+maptile.w) && (mouse.y<maptile.y+maptile.h))
+										if(mousehere)
 										{
 											line(screen, maptile.x, maptile.y, maptile.x+7, maptile.y, 255, 255, 0);
 											line(screen, maptile.x, maptile.y, maptile.x, maptile.y+7, 255, 255, 0);
@@ -970,8 +623,7 @@ int main(int argc, char *argv[])
 										}
 									}
 								break;
-								default:
-									;
+								default:;
 									char string[100];
 									sprintf(string, "Error: No such editmode %u.  Reverting to mode 0 (COLOURS)", editmode);
 									fprintf(stderr, "%s\n", string);
@@ -983,6 +635,7 @@ int main(int argc, char *argv[])
 					}
 				}
 			break;
+			// TODO This is where the audit is up to
 			case 1: // Iso/3d view
 				{
 					SDL_Rect maparea={280, 0, 520, 520};
