@@ -1,5 +1,5 @@
 CC := gcc
-CFLAGS := -Wall -Wextra -Werror -pedantic -std=gnu99
+CFLAGS := -Wall -Wextra -Werror -pedantic -std=gnu99 -g
 SDL := `sdl-config --cflags --libs` -lSDL_image -lSDL_ttf
 BINDIR := bin/
 SRCDIR := src/
@@ -17,29 +17,29 @@ VERSION := `git describe --tags`
 all: designer $(BINDIR)designer
 
 designer: $(BINDIR)designer
-	-ln $(BINDIR)designer designer --symbolic
+	-ln -s $(BINDIR)designer designer
 
 $(INCDIR)version.h: $(SRCDIR)designer.c $(SRCDIR)draw.c $(INCDIR)draw.h $(SRCDIR)dialogs.c $(INCDIR)dialogs.h $(SRCDIR)map.c $(INCDIR)map.h $(SRCDIR)bits.c $(INCDIR)bits.h 
 	bash ./gitversion
 
 $(BINDIR)designer: $(SRCDIR)designer.c $(LIBDIR)draw.o $(INCDIR)draw.h $(LIBDIR)dialogs.o $(INCDIR)dialogs.h $(LIBDIR)map.o $(INCDIR)map.h $(LIBDIR)bits.o $(INCDIR)bits.h  $(INCDIR)version.h
-	-mkdir $(BINDIR)
+	mkdir -p $(BINDIR)
 	$(CC) $(FLAGS) $(SDL) -o $(BINDIR)designer $(SRCDIR)designer.c $(LIBDIR)draw.o $(LIBDIR)dialogs.o $(LIBDIR)map.o $(LIBDIR)bits.o -lm $(DGFX) $(DFONT)
 
 $(LIBDIR)draw.o: $(SRCDIR)draw.c $(INCDIR)draw.h
-	-mkdir $(LIBDIR)
+	mkdir -p $(LIBDIR)
 	$(CC) $(FLAGS) $(SDL) -o $(LIBDIR)draw.o -c $(SRCDIR)draw.c $(DGFX)
 
 $(LIBDIR)dialogs.o: $(SRCDIR)dialogs.c $(INCDIR)dialogs.h
-	-mkdir $(LIBDIR)
+	mkdir -p $(LIBDIR)
 	$(CC) $(FLAGS) $(SDL) -o $(LIBDIR)dialogs.o -c $(SRCDIR)dialogs.c
 
 $(LIBDIR)map.o: $(SRCDIR)map.c $(INCDIR)map.h $(INCDIR)draw.h $(INCDIR)dialogs.h $(INCDIR)bits.h $(INCDIR)version.h
-	-mkdir $(LIBDIR)
+	mkdir -p $(LIBDIR)
 	$(CC) $(FLAGS) -o $(LIBDIR)map.o -c $(SRCDIR)map.c $(DGFX)
 
 $(LIBDIR)bits.o: $(SRCDIR)bits.c $(INCDIR)bits.h
-	-mkdir $(LIBDIR)
+	mkdir -p $(LIBDIR)
 	$(CC) $(FLAGS) -o $(LIBDIR)bits.o -c $(SRCDIR)bits.c
 
 dist: all
@@ -58,7 +58,7 @@ dist: all
 	gzip -9 dfdesigner_$(VERSION).tar
 
 distw:
-	-mkdir dfdw_$(VERSION)
+	mkdir dfdw_$(VERSION)
 	cp -r $(SRCDIR) dfdw_$(VERSION)/$(SRCDIR)
 	cp -r $(INCDIR) dfdw_$(VERSION)/$(INCDIR)
 	cp -r $(LIBDIR) dfdw_$(VERSION)/$(LIBDIR)
