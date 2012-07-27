@@ -421,7 +421,7 @@ int main(int argc, char *argv[])
 	// Set up control vars
 	char button;
 	pos mouse;
-	char drag=0, dold=drag;
+	char drag=0;
 	
 	pos view;
 	view.x=max(0, (worldx-64)/2);
@@ -1052,8 +1052,6 @@ int main(int argc, char *argv[])
 		if(showconsole)
 			SDL_BlitSurface(overlay, NULL, screen, &over);
 		SDL_Flip(screen);
-		
-		dold=drag; // old buttons-state
 		
 		// Loop through events
 		while(SDL_PollEvent(&event))
